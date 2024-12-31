@@ -8,4 +8,4 @@ python-jose[cryptography]
 beanie
 passlib[bcrypt] 
 pyjwt
-py-bcrypt
+bcrypt
