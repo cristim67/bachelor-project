@@ -1,0 +1,24 @@
+name: bachelor-project
+region: eu-central-1
+yamlVersion: 2
+frontend:
+    path: client
+    publish: dist
+    scripts:
+        deploy:
+            - npm install
+        build:
+            - npm run build
+    environment:
+        VITE_API_URL_FASTAPI: ${{ backend.functions.fastapi.url }}
+backend:
+    path: server
+    language:
+        name: python
+        packageManager: pip
+    functions:
+        - name: fastapi
+          path: .
+          handler: app
+          entry: app.py
+          type: httpServer

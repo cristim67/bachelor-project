@@ -1,36 +1,29 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse, JSONResponse
-from typing import Optional
-from utils import generate_project_json, create_project_from_json
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from middleware.not_found_handler import create_not_found_handler
+from middleware.error_handler import create_error_handler
+from routes import auth, db
+from db.connection import db_connection
 
 app = FastAPI()
 
-@app.get("/")
-async def query_llm(question: Optional[str] = "Simple CRUD APP in Fastify"):
-    async def generate():
-        for chunk in generate_project_json(question):
-            yield f"{chunk}"
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
-    return StreamingResponse(
-        generate(),
-        media_type="text/event-stream"
-    )
+# Middleware
+create_not_found_handler(app)
+create_error_handler(app)
 
-@app.get("/create")
-async def create_project(question: Optional[str] = "Hello world in Express"):
-    try:    
-        json_response = await generate_project_json(question)
-        project_id = create_project_from_json(json_response)
-        return JSONResponse(content={"status": "success", "project_id": project_id})
-        
-    except Exception as e:
-        return JSONResponse(content={"status": "error", "message": str(e)})
+# Routes
+app.include_router(auth.router, prefix="/auth")
+app.include_router(db.router)
 
-
-@app.get("/project/{project_id}")
-async def get_project(project_id: str):
-    return JSONResponse(content={"status": "success", "project_id": project_id})
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host='0.0.0.0', port=8080)
