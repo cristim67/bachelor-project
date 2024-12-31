@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 from passlib.context import CryptContext
 from config.env_handler import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from typing import Optional
 
 pwd_context = CryptContext(
     schemes=['bcrypt'],
@@ -17,7 +18,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
     return pwd_context.verify(password, hashed_password)
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta

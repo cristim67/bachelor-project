@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Optional
 
 class User(Document):
-    id: PydanticObjectId
     username: str
     email: str
     auth_provider: str 
