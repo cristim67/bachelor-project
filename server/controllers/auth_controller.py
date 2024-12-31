@@ -6,6 +6,9 @@ from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout
 from models.active_session import ActiveSession
 from utils.jwt_helper import create_access_token, hash_password, verify_password
 from utils.validate_helper import is_valid_email, is_valid_password
+from utils.otp_helper import generate_otp_code, is_otp_code_valid
+from services.email_service import email_service
+from config.otp_email_template import otp_email_template
 
 class AuthController:
     @staticmethod
@@ -19,19 +22,24 @@ class AuthController:
         if existing_user:
             raise HTTPException(status_code=400, detail="Email already exists")
         
+        otp_code = generate_otp_code()
+        email_service.send_email(user_input.email, "OTP Code", otp_email_template(otp_code), is_html=True)
+
         new_user = User(
             username=user_input.username,
             email=user_input.email,
             auth_provider="email&password",
-            hashed_password=hash_password(user_input.password)
+            hashed_password=hash_password(user_input.password),
+            otp_code=otp_code
         )
-        await new_user.insert()
 
-        session_token = create_access_token({"sub": str(new_user._id)})
-        new_session = ActiveSession(user_id=new_user._id, session_token=session_token)
+        created_user = await new_user.insert()
+        session_token = create_access_token({"sub": str(created_user.id)})
+        new_session = ActiveSession(user_id=created_user.id, session_token=session_token)
+        
         await new_session.insert()
 
-        return new_user, session_token
+        return created_user, session_token
 
     @staticmethod
     async def login(user_login: UserLogin):
@@ -39,8 +47,8 @@ class AuthController:
         if not user or not verify_password(user_login.password, user.hashed_password):
             raise HTTPException(status_code=400, detail="Invalid email or password")
         
-        session_token = create_access_token({"sub": str(user._id)})
-        new_session = ActiveSession(user_id=user._id, session_token=session_token)
+        session_token = create_access_token({"sub": str(user.id)})
+        new_session = ActiveSession(user_id=user.id, session_token=session_token)
         await new_session.insert()
         
         return user, session_token
