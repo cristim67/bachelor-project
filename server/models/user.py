@@ -8,6 +8,7 @@ class User(Document):
     auth_provider: str 
     hashed_password: Optional[str] = None
     otp_code: Optional[str] = None
+    otp_expiration: Optional[datetime] = None
     verified: bool = False
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()

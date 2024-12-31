@@ -23,3 +23,8 @@ async def logout(user_logout: UserLogout):
 async def update_user(user_update: UserUpdate):
     user = await AuthController.update_user(user_update)
     return {"code": 200, "user": user}
+
+@router.get("/user/verify-otp/")
+async def verify_otp(otp_code: str):
+    user = await AuthController.verify_otp(otp_code)
+    return {"code": 200, "user": user}

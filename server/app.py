@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from middleware.not_found_handler import create_not_found_handler
 from middleware.error_handler import create_error_handler
 from routes import auth, db
-from db.connection import db_connection
+from config.env_handler import PORT
 
 app = FastAPI()
 
@@ -26,4 +26,4 @@ app.include_router(db.router)
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=8080)
+    uvicorn.run(app, host='0.0.0.0', port=PORT or 3000)

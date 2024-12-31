@@ -1,9 +1,10 @@
 from fastapi import HTTPException
 from beanie import PydanticObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
 from models.user import User
 from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout
 from models.active_session import ActiveSession
+from controllers.session_controller import SessionController
 from utils.jwt_helper import create_access_token, hash_password, verify_password
 from utils.validate_helper import is_valid_email, is_valid_password
 from utils.otp_helper import generate_otp_code, is_otp_code_valid
@@ -30,14 +31,13 @@ class AuthController:
             email=user_input.email,
             auth_provider="email&password",
             hashed_password=hash_password(user_input.password),
-            otp_code=otp_code
+            otp_code=otp_code,
+            otp_expiration=datetime.now() + timedelta(minutes=10)
         )
 
         created_user = await new_user.insert()
         session_token = create_access_token({"sub": str(created_user.id)})
-        new_session = ActiveSession(user_id=created_user.id, session_token=session_token)
-        
-        await new_session.insert()
+        await SessionController.add_session(session_token, created_user.id)
 
         return created_user, session_token
 
@@ -47,9 +47,11 @@ class AuthController:
         if not user or not verify_password(user_login.password, user.hashed_password):
             raise HTTPException(status_code=400, detail="Invalid email or password")
         
+        if not user.verified:
+            raise HTTPException(status_code=400, detail="User not verified, please check your email for the OTP code")
+        
         session_token = create_access_token({"sub": str(user.id)})
-        new_session = ActiveSession(user_id=user.id, session_token=session_token)
-        await new_session.insert()
+        await SessionController.add_session(session_token, user.id)
         
         return user, session_token
     
@@ -60,6 +62,7 @@ class AuthController:
     @staticmethod
     async def update_user(id:str, properties: UserUpdate):
         user = await User.find_one({"_id": PydanticObjectId(id)})
+
         if not user:
             raise HTTPException(status_code=400, detail="User not found")
         if properties.username:
@@ -73,4 +76,26 @@ class AuthController:
         
         user.updated_at = datetime.now()
         await user.save()
+
+        return user
+    
+    @staticmethod
+    async def verify_otp(otp_code: str):
+        if not is_otp_code_valid(otp_code):
+            raise HTTPException(status_code=400, detail="Invalid OTP code")
+        
+        user = await User.find_one({"otp_code": otp_code})
+        if not user:
+            raise HTTPException(status_code=400, detail="User not found")
+        if user.otp_expiration < datetime.now():
+            raise HTTPException(status_code=400, detail="OTP code expired")
+        if user.verified:
+            raise HTTPException(status_code=400, detail="User already verified")
+        
+        user.verified = True
+        user.otp_code = None
+        user.otp_expiration = None
+        user.updated_at = datetime.now()
+        await user.save()
+
         return user
