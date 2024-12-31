@@ -1,7 +1,7 @@
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel
 from datetime import datetime, timedelta
 from config.env_handler import ACCESS_TOKEN_EXPIRE_MINUTES
+
 class ActiveSession(Document):
     user_id: PydanticObjectId
     session_token: str
