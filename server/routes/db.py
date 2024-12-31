@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from db.connection import db_connection
+
 router = APIRouter()
 
 @router.on_event("startup")

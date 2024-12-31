@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp, Receive, Scope, Send
 from typing import Callable
 
 RequestResponseEndpoint = Callable[[Request], Response]

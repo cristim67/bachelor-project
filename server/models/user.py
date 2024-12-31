@@ -1,5 +1,4 @@
-from beanie import Document, PydanticObjectId
-from pydantic import BaseModel
+from beanie import Document
 from datetime import datetime
 from typing import Optional
 

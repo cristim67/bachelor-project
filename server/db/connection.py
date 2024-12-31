@@ -1,6 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
-import os
 from models.user import User
 from models.active_session import ActiveSession
 from config.env_handler import MONGO_DB_DATABASE_URL

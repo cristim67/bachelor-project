@@ -12,3 +12,10 @@ class UserUpdate(BaseModel):
     email: Optional[str] = None
     auth_provider: Optional[str] = None
     password: Optional[str] = None
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UserLogout(BaseModel):
+    session_token: str
