@@ -7,7 +7,7 @@ from config.env_handler import MONGO_DB_DATABASE_URL
 class DatabaseConnection:
     def __init__(self):
         self.client = AsyncIOMotorClient(MONGO_DB_DATABASE_URL)
-        self.db = self.client['licenta']
+        self.db = self.client['mongo-db']
         
     async def initialize(self):
         await init_beanie(database=self.db, document_models=[User, ActiveSession])
