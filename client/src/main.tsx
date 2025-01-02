@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { routes } from "./routes/routes";
 import { ToastContainer } from "react-toastify";
-import Preloader from "./components/preloader.component";
+import Preloader from "./components/Preloader.component";
 import { PreloaderProvider } from "./contexts/preloader_provider";
 import { ThemeProvider } from "./contexts/theme_provider";
 
