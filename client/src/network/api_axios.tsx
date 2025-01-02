@@ -1,9 +1,10 @@
 import axios from "axios";
 import { toast } from "react-toastify";
 import { message_status } from "../configs/error_messages";
+import { API_URL } from "../configs/env_handler";
 
 const instance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: API_URL,
 });
 
 instance.interceptors.request.use((config) => {
