@@ -6,6 +6,8 @@ motor
 pydantic
 python-jose[cryptography]
 beanie
-passlib[bcrypt] 
+passlib[bcrypt]
 pyjwt
 bcrypt
+pytest-asyncio
+httpx

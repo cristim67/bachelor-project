@@ -15,8 +15,8 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                 status_code=http_ex.status_code,
                 content={'message': http_ex.detail}
             )
-        except Exception as e:
-            print(f"Error: {e}")
+        except Exception as ex:
+            print(f"Error: {ex}")
             return JSONResponse(
                 status_code=500,
                 content={'message': 'Internal server error'}

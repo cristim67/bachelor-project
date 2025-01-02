@@ -15,6 +15,7 @@ SMTP_PORT = os.getenv('SMTP_PORT')
 SMTP_USERNAME = os.getenv('SMTP_USERNAME')
 SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
 OTP_EXPIRATION_MINUTES = int(os.getenv('OTP_EXPIRATION_MINUTES'))
+OTP_CODE_LENGTH = int(os.getenv('OTP_CODE_LENGTH'))
 
 if ENVIRONMENT == 'development':
     APP_URL = f'http://localhost:{PORT}'
