@@ -9,8 +9,10 @@ frontend:
             - npm install
         build:
             - npm run build
+        start:
+            - npm run dev
     environment:
-        VITE_API_URL_FASTAPI: ${{ backend.functions.fastapi.url }}
+        VITE_API_URL: ${{ backend.functions.fastapi.url }}
 backend:
     path: server
     language:
@@ -22,3 +24,8 @@ backend:
           handler: app
           entry: app.py
           type: httpServer
+services:
+  databases:
+    - name: mongo-db
+      region: eu-central-1
+      type: mongo-atlas

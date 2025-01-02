@@ -38,6 +38,8 @@ class SessionController:
     @staticmethod
     async def check_session_expiration(session_token: str):
         session = await ActiveSession.find_one({"session_token": session_token})
+        if not session:
+            return False
         if session.expiration_time < datetime.now():
             await session.delete()
             return False

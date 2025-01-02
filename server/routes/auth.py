@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout
 from controllers.auth_controller import AuthController
-
+from controllers.session_controller import SessionController
 router = APIRouter()
 
 @router.post('/register/')
@@ -28,3 +28,8 @@ async def update_user(user_update: UserUpdate):
 async def verify_otp(otp_code: str):
     user = await AuthController.verify_otp(otp_code)
     return {"code": 200, "user": user}
+
+@router.get("/session/check/")
+async def check_session(session_token: str):
+    session = await SessionController.check_session_expiration(session_token)
+    return {"code": 200, "session": session}
