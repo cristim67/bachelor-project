@@ -1,8 +1,8 @@
 repos:
   - repo: local
     hooks:
-      - id: test-with-server
-        name: run tests with server
+      - id: pytest
+        name: run server and tests
         entry: bash -c 'python server/app.py & sleep 2 && pytest -v server; kill $!'
         language: system
         pass_filenames: false
