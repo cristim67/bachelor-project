@@ -54,6 +54,7 @@ export async function isAuthenticated(){
         const response = await instance.get(`/auth/session/check?token=${token}`);
         return response.data;
     } catch (error) {
+        console.log(error);
         return false;
     }
 }

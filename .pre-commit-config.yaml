@@ -7,3 +7,10 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      
+      - id: eslint
+        name: run eslint for client
+        entry: bash -c 'cd client && npm run lint'
+        language: system
+        pass_filenames: false
+        always_run: true
