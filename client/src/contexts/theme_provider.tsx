@@ -14,13 +14,17 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 export const ThemeProvider: FC<ThemeProviderProps> = ({ children }) => {
     const [theme, setTheme] = useState<"light" | "dark">(() => {
         const savedTheme = localStorage.getItem('theme');
-        return (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : 'dark';
+        const initialTheme = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : 'dark';
+        document.body.classList.remove("light", "dark");
+        document.body.classList.add(initialTheme);
+        return initialTheme;
     });
 
     const handleThemeChange = (newTheme: "light" | "dark") => {
         setTheme(newTheme);
         localStorage.setItem('theme', newTheme);
-        document.body.classList.toggle("light", newTheme === "light");
+        document.body.classList.remove("light", "dark");
+        document.body.classList.add(newTheme);
     };
 
     return (
