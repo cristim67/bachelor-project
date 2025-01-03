@@ -1,3 +1,4 @@
+import React from 'react';
 import AuthLayout from "../layouts/auth.layout";
 import { Home } from "../views/home.view";
 import { Login } from "../views/login.view";
