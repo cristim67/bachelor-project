@@ -5,5 +5,5 @@ updates:
     schedule:
       interval: "weekly"
     commit-message:
-      prefix: "[Dependabot] Update client dependencies"
+      prefix: "[Dependabot]: "
     versioning-strategy: increase
