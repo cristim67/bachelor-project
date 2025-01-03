@@ -7,3 +7,9 @@ updates:
     commit-message:
       prefix: "[Dependabot]: "
     versioning-strategy: increase
+    ignore:
+      - dependency-name: "react"
+        versions: ["18.3.1"]
+    labels:
+      - "dependencies"
+    auto-merge: false 
