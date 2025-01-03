@@ -23,7 +23,7 @@ const Preloader: React.FC = () => {
     >
       <div className="relative flex items-center justify-center">
         <div
-          className="text-white animate-spin"
+          className={`animate-spin ${theme === "dark" ? "text-gray-200" : "text-gray-800"}`}
           role="status"
         >
           <svg className="w-8 h-8" viewBox="0 0 24 24">

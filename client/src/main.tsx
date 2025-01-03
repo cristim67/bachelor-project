@@ -6,6 +6,7 @@ import { ToastContainer } from "react-toastify";
 import Preloader from "./components/Preloader.component";
 import { PreloaderProvider } from "./contexts/preloader_provider";
 import { ThemeProvider } from "./contexts/theme_provider";
+import { Footer } from "./components/footer.component";
 
 const App = () => {
   return (
@@ -32,6 +33,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <ThemeProvider>
         <Preloader />
         <App/>
+        <Footer />
       </ThemeProvider>
     </PreloaderProvider>
     <ToastContainer />
