@@ -14,3 +14,10 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      - id: vitest
+        name: run vitest for client
+        entry: bash -c 'cd client && npm run test'
+        language: system
+        pass_filenames: false
+        always_run: true
