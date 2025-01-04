@@ -21,9 +21,9 @@ export const Register: React.FC = () => {
     try {
       await register(username, email, password);
       toast.success("Registration successful!");
-      navigate("/");
+      navigate("/auth/login");
     } catch (error) {
-      toast.error(error as string);
+      console.log(error);
     }
     setRegisterLoading(false);
   };

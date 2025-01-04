@@ -1,7 +1,7 @@
 import AuthLayout from "../layouts/auth.layout";
 import { Home } from "../views/home.view";
 import { Login } from "../views/login.view";
-import { Register } from "../views/register";
+import { Register } from "../views/register.view";
 
 export const routes = [
   {

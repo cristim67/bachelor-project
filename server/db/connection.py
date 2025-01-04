@@ -10,8 +10,13 @@ class DatabaseConnection:
         self.db = self.client['mongo-db']
         
     async def initialize(self):
-        await init_beanie(database=self.db, document_models=[User, ActiveSession])
-
+        try:
+            await init_beanie(database=self.db, document_models=[User, ActiveSession])
+            print("Database connection initialized")
+        except Exception as e:
+            print(f"Error initializing database connection: {e}")
+            raise e
+        
     def get_db(self):
         return self.db
     
