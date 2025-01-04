@@ -12,7 +12,7 @@ interface PreloaderContextType {
 }
 
 export const PreloaderContext = createContext<PreloaderContextType | undefined>(
-  undefined
+  undefined,
 );
 
 interface PreloaderProviderProps {

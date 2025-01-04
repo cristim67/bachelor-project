@@ -4,8 +4,7 @@ from typing import Optional
 class UserInput(BaseModel):
     username: str
     email: str
-    auth_provider: str
-    password: Optional[str] = None
+    password: str
 
 class UserUpdate(BaseModel):
     username: Optional[str] = None
