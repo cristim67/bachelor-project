@@ -1,46 +1,50 @@
 import React, { useState } from "react";
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
-import { login, googleLogin } from "../network/api_axios";
+import { register, googleLogin } from "../network/api_axios";
 import { useTheme } from "../contexts/theme_provider";
 import { toast } from "react-toastify";
 
-export const Login: React.FC = () => {
+export const Register: React.FC = () => {
   const navigate = useNavigate();
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [googleLoginLoading, setGoogleLoginLoading] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [googleRegisterLoading, setGoogleRegisterLoading] = useState(false);
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const { theme } = useTheme();
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setLoginLoading(true);
+    setRegisterLoading(true);
     try {
-      await login(email, password);
+      await register(username, email, password);
+      toast.success("Registration successful!");
       navigate("/");
     } catch (error) {
       toast.error(error as string);
     }
-    setLoginLoading(false);
+    setRegisterLoading(false);
   };
 
   const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
-    setGoogleLoginLoading(true);
+    setGoogleRegisterLoading(true);
     try {
       await googleLogin(credentialResponse.credential!);
+      toast.success("Google login successful!");
       navigate("/");
     } catch (error) {
       toast.error(error as string);
     }
-    setGoogleLoginLoading(false);
+    setGoogleRegisterLoading(false);
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background-color">
       <div className="w-full max-w-md p-8 space-y-8 border rounded-lg shadow-md bg-surface-color border-border-color">
         <div className="mb-4 text-center">
-          {googleLoginLoading ? (
+          {googleRegisterLoading ? (
             <div className="text-text-secondary">Loading...</div>
           ) : (
             <div className="flex justify-center">
@@ -64,6 +68,23 @@ export const Login: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-text-primary"
+            >
+              Username:
+            </label>
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="block w-full px-3 py-2 mt-1 text-black border rounded-md shadow-sm bg-background-color border-border-color focus:border-accent-primary focus:ring-1 focus:ring-accent-primary focus:outline-none"
+              required
+            />
+          </div>
+
           <div>
             <label
               htmlFor="email"
@@ -104,19 +125,7 @@ export const Login: React.FC = () => {
                 : "border-white border-[1px] bg-button-color text-text-color hover:bg-button-hover-color"
             } focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2`}
           >
-            {loginLoading ? "Loading..." : "Login"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/auth/signup")}
-            className={`w-full px-4 py-2 transition-colors rounded-md ${
-              theme === "light"
-                ? "border-black border-[1px] bg-text-secondary text-surface-color hover:bg-text-primary"
-                : "border-white border-[1px] bg-text-secondary text-surface-color hover:bg-text-primary"
-            } focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2`}
-          >
-            Create account
+            {registerLoading ? "Loading..." : "Register"}
           </button>
         </form>
       </div>
@@ -124,4 +133,4 @@ export const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Register;

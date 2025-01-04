@@ -15,8 +15,11 @@ async def login(user_login: UserLogin):
     return {"code": 200, "user": user, "session_token": session_token}
 
 @router.post('/logout/')
-async def logout(user_logout: UserLogout):
-    await AuthController.logout(user_logout)
+async def logout(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith('Bearer '):
+        return {"code": 401, "message": "No session token provided"}
+    session_token = authorization.split(' ')[1]
+    await AuthController.logout(session_token)
     return {"code": 200}
 
 @router.post("/user/update/")

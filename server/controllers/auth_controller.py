@@ -60,8 +60,8 @@ class AuthController:
         return user, session_token
 
     @staticmethod
-    async def logout(user_logout: UserLogout):
-        await ActiveSession.find_one({"session_token": user_logout.session_token}).delete()
+    async def logout(session_token: str):
+        await ActiveSession.find_one({"session_token": session_token}).delete()
 
     @staticmethod
     async def update_user(id:str, properties: UserUpdate):
