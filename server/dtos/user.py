@@ -19,3 +19,6 @@ class UserLogin(BaseModel):
 
 class UserLogout(BaseModel):
     session_token: str
+
+class GoogleLogin(BaseModel):
+    credential: str

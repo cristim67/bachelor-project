@@ -1,5 +1,5 @@
-from fastapi import APIRouter
-from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout
+from fastapi import APIRouter, Header
+from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout, GoogleLogin
 from controllers.auth_controller import AuthController
 from controllers.session_controller import SessionController
 router = APIRouter()
@@ -30,6 +30,15 @@ async def verify_otp(otp_code: str):
     return {"code": 200, "user": user}
 
 @router.get("/session/check/")
-async def check_session(session_token: str):
+async def check_session(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith('Bearer '):
+        return {"code": 401, "session": False}
+    
+    session_token = authorization.split(' ')[1]
     session = await SessionController.check_session_expiration(session_token)
     return {"code": 200, "session": session}
+
+@router.post("/google-login/")
+async def google_login(google_login: GoogleLogin):
+    user, session_token = await AuthController.google_login(google_login)
+    return {"code": 200, "user": user, "session_token": session_token}

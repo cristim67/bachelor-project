@@ -7,6 +7,8 @@ import Preloader from "./components/Preloader.component";
 import { PreloaderProvider } from "./contexts/preloader_provider";
 import { ThemeProvider } from "./contexts/theme_provider";
 import { Footer } from "./components/footer.component";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import { GOOGLE_CLIENT_ID } from "./configs/env_handler";
 
 const App = () => {
   return (
@@ -28,14 +30,16 @@ const App = () => {
 };
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <PreloaderProvider>
-      <ThemeProvider>
-        <Preloader />
+    <React.StrictMode>
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <PreloaderProvider>
+        <ThemeProvider>
+          <Preloader />
         <App/>
         <Footer />
-      </ThemeProvider>
-    </PreloaderProvider>
+        </ThemeProvider>
+      </PreloaderProvider>
+    </GoogleOAuthProvider>
     <ToastContainer />
   </React.StrictMode>
 );

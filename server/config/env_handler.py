@@ -16,6 +16,8 @@ SMTP_USERNAME = os.getenv('SMTP_USERNAME')
 SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
 OTP_EXPIRATION_MINUTES = int(os.getenv('OTP_EXPIRATION_MINUTES'))
 OTP_CODE_LENGTH = int(os.getenv('OTP_CODE_LENGTH'))
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 
 if ENVIRONMENT == 'development':
     APP_URL = f'http://localhost:{PORT}'

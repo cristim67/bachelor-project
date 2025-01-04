@@ -13,6 +13,7 @@ frontend:
             - npm run dev
     environment:
         VITE_API_URL: ${{ backend.functions.fastapi.url }}
+    subdomain: blue-genetic-wildfowl
 backend:
     path: server
     language:
@@ -25,7 +26,7 @@ backend:
           entry: app.py
           type: httpServer
 services:
-  databases:
-    - name: mongo-db
-      region: eu-central-1
-      type: mongo-atlas
+    databases:
+        - name: mongo-db
+          region: eu-central-1
+          type: mongo-atlas
