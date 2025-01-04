@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from beanie import PydanticObjectId
 from datetime import datetime, timedelta
 from models.user import User
-from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout
+from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout, GoogleLogin
 from models.active_session import ActiveSession
 from controllers.session_controller import SessionController
 from utils.jwt_helper import create_access_token, hash_password, verify_password
@@ -10,6 +10,10 @@ from utils.validate_helper import is_valid_email, is_valid_password
 from utils.otp_helper import generate_otp_code, is_otp_code_valid
 from services.email_service import email_service
 from config.otp_email_template import otp_email_template
+from config.env_handler import GOOGLE_CLIENT_ID
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from typing import Tuple
 
 class AuthController:
     @staticmethod
@@ -99,3 +103,43 @@ class AuthController:
         await user.save()
 
         return user
+
+    @staticmethod
+    async def google_login(credential: GoogleLogin) -> Tuple[User, str]:
+        if not credential.credential:
+            raise HTTPException(status_code=400, detail="Invalid credential")
+        
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                credential.credential, 
+                requests.Request(), 
+                GOOGLE_CLIENT_ID
+            )
+
+            email = idinfo['email']
+            
+            user = await User.find_one({"email": email})
+            
+            if user and user.auth_provider != "google":
+                raise HTTPException(
+                    status_code=400, 
+                    detail="An account with this email already exists. Please login with email and password."
+                )
+            
+            if not user:
+                user = User(
+                    username=idinfo['name'],
+                    email=email,
+                    profile_picture=idinfo.get('picture'),
+                    auth_provider="google",
+                    verified=True
+                )
+                await user.insert()
+
+            session_token = create_access_token({"sub": str(user.id)})
+            await SessionController.add_session(session_token, user.id)
+            
+            return user, session_token
+
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid Google token")

@@ -12,3 +12,4 @@ class User(Document):
     verified: bool = False
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
+    profile_picture: Optional[str] = None

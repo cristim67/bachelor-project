@@ -51,10 +51,37 @@ export async function isAuthenticated(){
     }
 
     try {
-        const response = await instance.get(`/auth/session/check?token=${token}`);
+        const response = await instance.get('/auth/session/check');
         return response.data;
     } catch (error) {
         console.log(error);
         return false;
     }
+}
+
+export async function login(email: string, password: string){
+    const response = await instance.post("/auth/login", {
+        email,
+        password
+    });
+
+    if(response.data.session){
+        localStorage.setItem("apiToken", response.data.session_token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+    }
+    
+    return response.data;
+}
+
+export async function googleLogin(credential: string){
+    const response = await instance.post("/auth/google-login", {
+        credential
+    });
+    
+    if(response.data.session){
+        localStorage.setItem("apiToken", response.data.session_token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+    }
+    
+    return response.data;
 }

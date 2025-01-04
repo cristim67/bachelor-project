@@ -11,3 +11,5 @@ pyjwt
 bcrypt
 pytest-asyncio
 httpx
+google-auth
+requests

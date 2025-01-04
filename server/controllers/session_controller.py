@@ -1,5 +1,6 @@
 from models.active_session import ActiveSession
-from datetime import datetime
+from datetime import datetime, timedelta
+from config.env_handler import ACCESS_TOKEN_EXPIRE_MINUTES
 
 class SessionController:
     @staticmethod
@@ -14,7 +15,7 @@ class SessionController:
     
     @staticmethod
     async def add_session(session_token: str, user_id: str):
-        new_session = ActiveSession(session_token=session_token, user_id=user_id)
+        new_session = ActiveSession(session_token=session_token, user_id=user_id, expire_at=datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), created_at=datetime.now())
         response = await new_session.insert()
 
         return response
@@ -40,7 +41,7 @@ class SessionController:
         session = await ActiveSession.find_one({"session_token": session_token})
         if not session:
             return False
-        if session.expiration_time < datetime.now():
+        if session.expire_at < datetime.now():
             await session.delete()
             return False
         return True
@@ -50,7 +51,7 @@ class SessionController:
         session = await ActiveSession.find_one({"user_id": user_id})
         if not session:
             return False
-        if session.expiration_time < datetime.now():
+        if session.expire_at < datetime.now():
             await session.delete()
             return False
         return True
