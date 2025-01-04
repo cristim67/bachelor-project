@@ -13,7 +13,6 @@ frontend:
             - npm run dev
     environment:
         VITE_API_URL: ${{ backend.functions.fastapi.url }}
-    subdomain: blue-genetic-wildfowl
 backend:
     path: server
     language:
