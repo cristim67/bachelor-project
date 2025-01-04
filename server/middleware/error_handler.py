@@ -16,7 +16,10 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                 content={'message': http_ex.detail}
             )
         except Exception as ex:
-            print(f"Error: {ex}")
+            print(f"Error: {str(ex)}")
+            print(f"Error type: {type(ex).__name__}")
+            import traceback
+            print(f"Stack trace: {''.join(traceback.format_tb(ex.__traceback__))}")
             return JSONResponse(
                 status_code=500,
                 content={'message': 'Internal server error'}
