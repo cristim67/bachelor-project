@@ -14,6 +14,7 @@ from config.env_handler import GOOGLE_CLIENT_ID
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from typing import Tuple
+from db.connection import db_connection
 
 class AuthController:
     @staticmethod
@@ -106,6 +107,8 @@ class AuthController:
 
     @staticmethod
     async def google_login(credential: GoogleLogin) -> Tuple[User, str]:
+        await db_connection.initialize() 
+        
         if not credential.credential:
             raise HTTPException(status_code=400, detail="Invalid credential")
         
