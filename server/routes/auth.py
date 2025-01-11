@@ -29,9 +29,19 @@ async def update_user(user_update: UserUpdate):
     return {"code": 200, "user": user}
 
 @router.get("/user/verify-otp")
-async def verify_otp(otp_code: str):
-    await AuthController.verify_otp(otp_code)
+async def verify_otp(email: str, otp_code: str):
+    await AuthController.verify_otp(email, otp_code)
     return {"code": 200, "message": f"OTP verified successfully, you can now login at {FRONTEND_URL}/auth/login"}
+
+@router.get("/user/forgot-password")
+async def forgot_password(email: str):
+    await AuthController.forgot_password(email)
+    return {"code": 200, "message": f"Check your email for the reset password link"}
+
+@router.get("/user/verify-otp-forgot-password")
+async def verify_otp_forgot_password(email: str, otp_code: str):
+    password = await AuthController.verify_otp_forgot_password(email, otp_code)
+    return {"code": 200, "message": f"OTP verified successfully, new password is: {password}"}
 
 @router.get("/session/check")
 async def check_session(authorization: str = Header(None)):
