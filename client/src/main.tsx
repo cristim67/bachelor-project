@@ -10,10 +10,11 @@ import { Footer } from "./components/footer.component";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { GOOGLE_CLIENT_ID } from "./configs/env_handler";
 import { Header } from "./components/header.component";
-
+import { AuthProvider } from "./contexts/auth_context";
 const App = () => {
   return (
     <Router>
+      <Header />
       <Routes>
         {routes.map((route, index) => {
           const Layout = route.layout;
@@ -28,6 +29,7 @@ const App = () => {
           );
         })}
       </Routes>
+      <Footer />
     </Router>
   );
 };
@@ -35,14 +37,14 @@ const App = () => {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <PreloaderProvider>
-        <ThemeProvider>
-          <Preloader />
-          <Header />
-          <App />
-          <Footer />
-        </ThemeProvider>
-      </PreloaderProvider>
+      <AuthProvider>
+        <PreloaderProvider>
+          <ThemeProvider>
+            <Preloader />
+            <App />
+          </ThemeProvider>
+        </PreloaderProvider>
+      </AuthProvider>
     </GoogleOAuthProvider>
     <ToastContainer />
   </React.StrictMode>,

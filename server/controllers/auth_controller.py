@@ -10,7 +10,7 @@ from utils.validate_helper import is_valid_email, is_valid_password
 from utils.otp_helper import generate_otp_code, is_otp_code_valid
 from services.email_service import email_service
 from config.otp_email_template import otp_email_template
-from config.env_handler import GOOGLE_CLIENT_ID
+from config.env_handler import GOOGLE_CLIENT_ID, OTP_EXPIRATION_MINUTES
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from typing import Tuple
@@ -37,7 +37,7 @@ class AuthController:
             auth_provider="email&password",
             hashed_password=hash_password(user_input.password),
             otp_code=otp_code,
-            otp_expiration=datetime.now() + timedelta(minutes=10)
+            otp_expiration=datetime.now() + timedelta(minutes=OTP_EXPIRATION_MINUTES)
         )
 
         created_user = await new_user.insert()
@@ -53,6 +53,9 @@ class AuthController:
             raise HTTPException(status_code=400, detail="Invalid email or password")
 
         if not user.verified:
+            otp_code = generate_otp_code()
+            await User.update_one({"_id": user.id}, {"$set": {"otp_code": otp_code, "otp_expiration": datetime.now() + timedelta(minutes=OTP_EXPIRATION_MINUTES)}})
+            email_service.send_email(user.email, "OTP Code", otp_email_template(otp_code), is_html=True)
             raise HTTPException(status_code=401, detail="User not verified, please check your email for the OTP code")
 
         session_token = create_access_token({"sub": str(user.id)})
@@ -91,7 +94,7 @@ class AuthController:
 
         user = await User.find_one({"otp_code": otp_code})
         if not user:
-            raise HTTPException(status_code=400, detail="User not found")
+            raise HTTPException(status_code=400, detail="User already verified")
         if user.otp_expiration < datetime.now():
             raise HTTPException(status_code=400, detail="OTP code expired")
         if user.verified:
