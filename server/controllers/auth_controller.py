@@ -2,14 +2,14 @@ from fastapi import HTTPException
 from beanie import PydanticObjectId
 from datetime import datetime, timedelta
 from models.user import User
-from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout, GoogleLogin
+from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout, GoogleLogin, ForgotPassword
 from models.active_session import ActiveSession
 from controllers.session_controller import SessionController
 from utils.jwt_helper import create_access_token, hash_password, verify_password, generate_random_password
 from utils.validate_helper import is_valid_email, is_valid_password
 from utils.otp_helper import generate_otp_code, is_otp_code_valid
 from services.email_service import email_service
-from config.otp_email_template import otp_email_template, otp_forgot_password_email_template
+from config.otp_email_template import otp_email_template, otp_forgot_password_email_template, otp_notification_email_template
 from config.env_handler import GOOGLE_CLIENT_ID, OTP_EXPIRATION_MINUTES
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -111,13 +111,15 @@ class AuthController:
         return user
     
     @staticmethod
-    async def forgot_password(email: str):
-        user = await User.find_one({"email": email})
+    async def forgot_password(forgot_password: ForgotPassword):
+        user = await User.find_one({"email": forgot_password.email})
         if not user:
             raise HTTPException(status_code=400, detail="User not found")
+        if user.auth_provider != "email&password":
+            raise HTTPException(status_code=400, detail="User is not registered with email and password")
         
         otp_code = generate_otp_code()
-        email_service.send_email(user.email, "OTP Code", otp_forgot_password_email_template(otp_code), is_html=True)
+        email_service.send_email(user.email, "OTP Code", otp_forgot_password_email_template(otp_code, user.email), is_html=True)
 
         user.otp_code = otp_code
         user.otp_expiration = datetime.now() + timedelta(minutes=OTP_EXPIRATION_MINUTES)
@@ -135,6 +137,8 @@ class AuthController:
             raise HTTPException(status_code=400, detail="User not found")
         if user.email != email:
             raise HTTPException(status_code=400, detail="OTP code does not match the email")
+        if user.auth_provider != "email&password":
+            raise HTTPException(status_code=400, detail="User is not registered with email and password")
         if user.otp_expiration < datetime.now():
             raise HTTPException(status_code=400, detail="OTP code expired")
         
@@ -145,6 +149,8 @@ class AuthController:
         user.verified = True
         user.updated_at = datetime.now()
         await user.save()
+
+        email_service.send_email(user.email, "New Password", otp_notification_email_template(new_password, user.email), is_html=True)
 
         return new_password
 

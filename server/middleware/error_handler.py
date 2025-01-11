@@ -11,6 +11,7 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             return response
         except HTTPException as http_ex:
+            print(f"HTTPException: {http_ex}, {http_ex.status_code}, {http_ex.detail}")
             return JSONResponse(
                 status_code=http_ex.status_code,
                 content={'message': http_ex.detail}

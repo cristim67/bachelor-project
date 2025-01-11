@@ -21,3 +21,6 @@ class UserLogout(BaseModel):
 
 class GoogleLogin(BaseModel):
     credential: str
+
+class ForgotPassword(BaseModel):
+    email: str

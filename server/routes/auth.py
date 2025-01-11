@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Header
-from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout, GoogleLogin
+from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout, GoogleLogin, ForgotPassword
 from controllers.auth_controller import AuthController
 from controllers.session_controller import SessionController
 from config.env_handler import FRONTEND_URL
@@ -33,9 +33,9 @@ async def verify_otp(email: str, otp_code: str):
     await AuthController.verify_otp(email, otp_code)
     return {"code": 200, "message": f"OTP verified successfully, you can now login at {FRONTEND_URL}/auth/login"}
 
-@router.get("/user/forgot-password")
-async def forgot_password(email: str):
-    await AuthController.forgot_password(email)
+@router.post("/user/forgot-password")
+async def forgot_password(forgot_password_data: ForgotPassword):
+    await AuthController.forgot_password(forgot_password_data)
     return {"code": 200, "message": f"Check your email for the reset password link"}
 
 @router.get("/user/verify-otp-forgot-password")
