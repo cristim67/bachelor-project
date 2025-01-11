@@ -4,6 +4,8 @@ from jose import jwt
 from passlib.context import CryptContext
 from config.env_handler import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from typing import Optional
+import random
+import string
 
 pwd_context = CryptContext(
     schemes=['bcrypt'],
@@ -35,3 +37,5 @@ def decode_access_token(token: str):
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail='Token expired')
 
+def generate_random_password():
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
