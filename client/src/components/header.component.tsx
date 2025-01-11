@@ -1,26 +1,10 @@
-import { useState } from "react";
-import { useEffect } from "react";
-import { isAuthenticated } from "../network/api_axios";
 import { logout } from "../network/api_axios";
 import { useTheme } from "../contexts/theme_provider";
+import { useAuth } from "../contexts/auth_context";
 
 export const Header = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn, setIsLoggedIn } = useAuth(); 
   const { theme } = useTheme();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const authStatus = await isAuthenticated();
-        setIsLoggedIn(authStatus);
-      } catch (error) {
-        console.error("Eroare la verificarea autentificării:", error);
-        setIsLoggedIn(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
 
   const handleLogout = async () => {
     try {

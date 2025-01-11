@@ -2,6 +2,7 @@ from fastapi import APIRouter, Header
 from dtos.user import UserInput, UserUpdate, UserLogin, UserLogout, GoogleLogin
 from controllers.auth_controller import AuthController
 from controllers.session_controller import SessionController
+from config.env_handler import FRONTEND_URL
 router = APIRouter()
 
 @router.post("/register")
@@ -29,8 +30,8 @@ async def update_user(user_update: UserUpdate):
 
 @router.get("/user/verify-otp")
 async def verify_otp(otp_code: str):
-    user = await AuthController.verify_otp(otp_code)
-    return {"code": 200, "user": user}
+    await AuthController.verify_otp(otp_code)
+    return {"code": 200, "message": f"OTP verified successfully, you can now login at {FRONTEND_URL}/auth/login"}
 
 @router.get("/session/check")
 async def check_session(authorization: str = Header(None)):

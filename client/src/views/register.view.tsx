@@ -1,12 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { register, googleLogin } from "../network/api_axios";
 import { useTheme } from "../contexts/theme_provider";
 import { toast } from "react-toastify";
+import { useAuth } from "../contexts/auth_context";
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
   const [registerLoading, setRegisterLoading] = useState(false);
   const [googleRegisterLoading, setGoogleRegisterLoading] = useState(false);
   const [username, setUsername] = useState("");
@@ -15,12 +17,19 @@ export const Register: React.FC = () => {
 
   const { theme } = useTheme();
 
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate("/");
+      toast.error("You are already logged in");
+    }
+  }, [isLoggedIn]);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setRegisterLoading(true);
     try {
       await register(username, email, password);
-      toast.success("Registration successful!");
+      toast.success("Registration successful! Check your email for verification.");
       navigate("/auth/login");
     } catch (error) {
       console.log(error);

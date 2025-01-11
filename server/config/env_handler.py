@@ -18,10 +18,5 @@ OTP_EXPIRATION_MINUTES = int(os.getenv('OTP_EXPIRATION_MINUTES'))
 OTP_CODE_LENGTH = int(os.getenv('OTP_CODE_LENGTH'))
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
-
-if ENVIRONMENT == 'development':
-    APP_URL = f'http://localhost:{PORT}'
-elif ENVIRONMENT == 'production':
-    APP_URL = f'https://api.example.com'
-else:
-    raise ValueError(f'Invalid environment: {ENVIRONMENT}')
+FRONTEND_URL = os.getenv('FRONTEND_URL_LOCAL') if ENVIRONMENT == 'development' else os.getenv('FRONTEND_URL_PRODUCTION')
+API_URL = os.getenv('API_URL_LOCAL') if ENVIRONMENT == 'development' else os.getenv('API_URL_PRODUCTION')

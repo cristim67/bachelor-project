@@ -1,23 +1,34 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { login, googleLogin } from "../network/api_axios";
 import { useTheme } from "../contexts/theme_provider";
 import { toast } from "react-toastify";
+import { useAuth } from "../contexts/auth_context";
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { isLoggedIn, setIsLoggedIn } = useAuth();
   const [loginLoading, setLoginLoading] = useState(false);
   const [googleLoginLoading, setGoogleLoginLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const { theme } = useTheme();
+
+  useEffect(() => {
+    if (isLoggedIn) { 
+      navigate("/");
+      toast.error("You are already logged in");
+    }
+  }, [isLoggedIn]);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoginLoading(true);
     try {
       await login(email, password);
+      setIsLoggedIn(true);
       navigate("/");
     } catch (error) {
       toast.error(error as string);
@@ -29,6 +40,7 @@ export const Login: React.FC = () => {
     setGoogleLoginLoading(true);
     try {
       await googleLogin(credentialResponse.credential!);
+      setIsLoggedIn(true);
       navigate("/");
     } catch (error) {
       toast.error(error as string);
