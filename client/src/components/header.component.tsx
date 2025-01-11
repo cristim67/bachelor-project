@@ -24,9 +24,6 @@ export const Header = () => {
       }`}
     >
       <div className="flex items-center gap-8">
-        <a href="/" className="flex items-center">
-          <img src="/logo.png" alt="Logo" className="w-auto h-8" />
-        </a>
         <a
           href="/"
           className="transition-colors text-text-primary hover:text-accent-primary"
