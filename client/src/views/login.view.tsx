@@ -17,11 +17,10 @@ export const Login: React.FC = () => {
   const { theme } = useTheme();
 
   useEffect(() => {
-    if (isLoggedIn) { 
+    if (isLoggedIn && !loginLoading && !googleLoginLoading) {
       navigate("/");
-      toast.error("You are already logged in");
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, loginLoading, googleLoginLoading]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -108,6 +107,14 @@ export const Login: React.FC = () => {
             />
           </div>
 
+          <div className="flex justify-start">
+            <a
+              href="/auth/forgot-password"
+              className="text-sm text-right text-text-secondary hover:text-accent-primary"
+            >
+              Forgot password?
+            </a>
+          </div>
           <button
             type="submit"
             className={`w-full px-4 py-2 transition-colors rounded-md ${
