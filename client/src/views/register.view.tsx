@@ -18,11 +18,10 @@ export const Register: React.FC = () => {
   const { theme } = useTheme();
 
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isLoggedIn && !registerLoading && !googleRegisterLoading) {
       navigate("/");
-      toast.error("You are already logged in");
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, registerLoading, googleRegisterLoading]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

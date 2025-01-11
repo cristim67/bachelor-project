@@ -90,3 +90,10 @@ export async function register(
   });
   return response.data;
 }
+
+export async function forgotPassword(email: string) {
+  const response = await instance.post("/auth/user/forgot-password", {
+    email,
+  });
+  return response.data;
+}
