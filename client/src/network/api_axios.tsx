@@ -1,7 +1,7 @@
 import axios from "axios";
 import { toast } from "react-toastify";
 import { API_URL } from "../configs/env_handler";
-
+import { ProjectType } from "../dtos/project_types";
 const instance = axios.create({
   baseURL: API_URL,
 });
@@ -95,5 +95,15 @@ export async function forgotPassword(email: string) {
   const response = await instance.post("/auth/user/forgot-password", {
     email,
   });
+  return response.data;
+}
+
+export async function createProject(project: ProjectType) {
+  const response = await instance.post("/project/create", project);
+  return response.data;
+}
+
+export async function getProject(id: string) {
+  const response = await instance.get(`/project/get/${id}`);
   return response.data;
 }

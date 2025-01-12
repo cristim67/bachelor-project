@@ -13,3 +13,4 @@ pytest-asyncio
 httpx
 google-auth
 requests
+boto3

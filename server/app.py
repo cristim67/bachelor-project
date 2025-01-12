@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from middleware.not_found_handler import create_not_found_handler
 from middleware.error_handler import create_error_handler
-from routes import auth
+from routes import auth, project
 from config.env_handler import PORT
 from routes.db import lifespan
 
@@ -23,6 +23,7 @@ create_error_handler(app)
 
 # Routes
 app.include_router(auth.router, prefix="/auth")
+app.include_router(project.router, prefix="/project")
 
 if __name__ == '__main__':
     import uvicorn
