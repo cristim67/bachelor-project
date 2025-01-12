@@ -2,22 +2,23 @@ import react from "../assets/frameworks/react.png";
 import nextjs from "../assets/frameworks/nextjs.png";
 import vue from "../assets/frameworks/vue.png";
 import streamlit from "../assets/frameworks/streamlit.png";
-import express from "../assets/frameworks/express.png";
-import fastify from "../assets/frameworks/fastify.png";
-import nestjs from "../assets/frameworks/nestjs.png";
+import express from "../assets/frameworks/express.svg";
+import nestjs from "../assets/frameworks/nestjs.svg";
 import fastapi from "../assets/frameworks/fastapi.png";
 import flask from "../assets/frameworks/flask.png";
-import sequelize from "../assets/frameworks/sequelize.png";
-import prisma from "../assets/frameworks/prisma.png";
+import sequelize from "../assets/frameworks/sequelize.svg";
+import prisma from "../assets/frameworks/prisma.svg";
 import drizzle from "../assets/frameworks/drizzle.png";
 import python from "../assets/frameworks/python.png";
-import javascript from "../assets/frameworks/javascript.png";
+import javascript from "../assets/frameworks/javascript.svg";
 import sqlalchemy from "../assets/frameworks/sqlalchemy.png";
 import beanie from "../assets/frameworks/beanie.png";
-import postgresql from "../assets/frameworks/postgresql.png";
-import mongodb from "../assets/frameworks/mongodb.png";
+import postgresql from "../assets/frameworks/postgresql.svg";
+import mongodb from "../assets/frameworks/mongodb.svg";
 import rest from "../assets/frameworks/rest.svg";
 import graphql from "../assets/frameworks/graphql.svg";
+import tailwind from "../assets/frameworks/tailwind.svg";
+import bootstrap from "../assets/frameworks/bootstrap.png"
 
 export const optionsProjectStack = {
   apiTypes: [
@@ -35,7 +36,6 @@ export const optionsProjectStack = {
     ],
     javascript: [
       { value: "express", label: "Express", icon: express },
-      { value: "fastify", label: "Fastify", icon: fastify },
       { value: "nestjs", label: "NestJS", icon: nestjs },
     ],
   },
@@ -54,30 +54,42 @@ export const optionsProjectStack = {
       { value: "drizzle", label: "Drizzle", icon: drizzle },
     ],
   },
-  frontend: {
-    python: [
-      {
-        value: "streamlit",
-        label: "Streamlit",
-        icon: streamlit,
-      },
-    ],
-    javascript: [
-      {
-        value: "nextjs",
-        label: "NextJS",
-        icon: nextjs,
-      },
-      {
-        value: "react",
-        label: "React",
-        icon: react,
-      },
-      {
-        value: "vue",
-        label: "Vue",
-        icon: vue,
-      },
-    ],
-  },
+  frontend: [
+    {
+      value: "nextjs",
+      label: "NextJS",
+      icon: nextjs,
+      supportsCss: true,
+    },
+    {
+      value: "react",
+      label: "React",
+      icon: react,
+      supportsCss: true,
+    },
+    {
+      value: "vue",
+      label: "Vue",
+      icon: vue,
+      supportsCss: true,
+    },
+    {
+      value: "streamlit",
+      label: "Streamlit",
+      icon: streamlit,
+      supportsCss: false,
+    },
+  ],
+  css: [
+    {
+      value: "tailwind",
+      label: "Tailwind",
+      icon: tailwind,
+    },
+    {
+      value: "bootstrap",
+      label: "Bootstrap",
+      icon: bootstrap,
+    },
+  ],
 };
