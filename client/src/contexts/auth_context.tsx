@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const authStatus = await isAuthenticated();
         setIsLoggedIn(authStatus);
       } catch (error) {
-        console.error("Eroare la verificarea autentificării:", error);
+        console.error("Error checking authentication", error);
         setIsLoggedIn(false);
       }
     };
