@@ -6,11 +6,11 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest_asyncio
-from config.env_handler import APP_URL
+from config.env_handler import API_URL, FRONTEND_URL
 
 @pytest_asyncio.fixture
 async def client():
-    async with AsyncClient(base_url=APP_URL) as client:
+    async with AsyncClient(base_url=API_URL) as client:
         yield client
 
 @pytest.mark.asyncio
@@ -41,10 +41,10 @@ async def test_login_user_not_verified(client):
 @pytest.mark.asyncio
 async def test_login_user_verified(client):
     print("Testing verify otp route with data:", login_input_data, "otp_code_register_test:", otp_code_register_test)
-    verify_otp_response = await client.get(f"/auth/user/verify-otp?otp_code={otp_code_register_test}")
+    verify_otp_response = await client.get(f"/auth/user/verify-otp?email={register_input_data['email']}&otp_code={otp_code_register_test}")
     assert verify_otp_response.status_code == 200
     data = verify_otp_response.json()
-    assert data["user"]["email"] == register_input_data["email"] and data["user"]["username"] == register_input_data["username"]
+    assert data["message"] == f"OTP verified successfully, you can now login at {FRONTEND_URL}/auth/login"
 
     login_response = await client.post("/auth/login", json=login_input_data)
     assert login_response.status_code == 200

@@ -3,12 +3,11 @@ import { ForgotPassword } from "../views/forgot-password";
 import { Home } from "../views/home.view";
 import { Login } from "../views/login.view";
 import { Register } from "../views/register.view";
-
+import { Project } from "../views/project.view";
 export const routes = [
   {
     path: "/",
     element: <Home />,
-    layout: AuthLayout,
   },
   {
     path: "/auth/login",
@@ -21,5 +20,10 @@ export const routes = [
   {
     path: "/auth/forgot-password",
     element: <ForgotPassword />,
+  },
+  {
+    path: "/project/:id",
+    element: <Project />,
+    layout: AuthLayout,
   },
 ];
