@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/auth_context";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { optionsProjectStack } from "../configs/options_project_stack";
+import { createProject } from "../network/api_axios";
 
 export const Home = () => {
   const { theme } = useTheme();
@@ -72,6 +73,41 @@ export const Home = () => {
     setShowStackSelection(true);
     toast.info("Please select your project stack", { autoClose: 2000 });
   };
+
+  const handleCreateProject = async () => {
+    console.log(selectedStack);
+    const isValid =
+      projectType === "fullstack"
+        ? Object.values(selectedStack).every((value) => value !== "")
+        : projectType === "backend"
+        ? ["apiType", "language", "framework", "database"].every(
+            (key) =>
+              selectedStack[key as keyof typeof selectedStack] !== "",
+          )
+        : ["frontend", "css"].every(
+            (key) =>
+              selectedStack[key as keyof typeof selectedStack] !== "",
+          );
+
+    if (!isValid) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    const response = await createProject({
+      idea: prompt,
+      stack: { ...selectedStack, projectType: projectType },
+      is_public: isPublic,
+    });
+
+    const projectId = response.id;
+    console.log(response);
+    
+    toast.success("Project created successfully");
+    setTimeout(() => {
+      navigate(`/projects/${projectId}`);
+    }, 1000);
+  }
 
   const renderStackSelection = () => (
     <div className="w-full max-w-4xl space-y-6">
@@ -169,7 +205,9 @@ export const Home = () => {
                         src={api.icon}
                         alt={api.label}
                         className={`w-8 h-8 mr-2 ${
-                          theme === "dark" && api.value === "rest" ? "invert" : ""
+                          theme === "dark" && api.value === "rest"
+                            ? "invert"
+                            : ""
                         }`}
                       />
                       <span>{api.label}</span>
@@ -280,7 +318,9 @@ export const Home = () => {
                           src={framework.icon}
                           alt={framework.label}
                           className={`w-8 h-8 mr-2 ${
-                            theme === "dark" && framework.value === "express" ? "invert" : ""
+                            theme === "dark" && framework.value === "express"
+                              ? "invert"
+                              : ""
                           }`}
                         />
                         <span>{framework.label}</span>
@@ -465,26 +505,7 @@ export const Home = () => {
               ? "border-black border-[1px] bg-button-color text-text-color hover:bg-button-hover-color"
               : "border-white border-[1px] bg-button-color text-text-color hover:bg-button-hover-color"
           }`}
-          onClick={() => {
-            const isValid =
-              projectType === "fullstack"
-                ? Object.values(selectedStack).every((value) => value !== "")
-                : projectType === "backend"
-                ? ["apiType", "language", "framework", "database"].every(
-                    (key) =>
-                      selectedStack[key as keyof typeof selectedStack] !== "",
-                  )
-                : ["frontend", "css"].every(
-                    (key) =>
-                      selectedStack[key as keyof typeof selectedStack] !== "",
-                  );
-
-            if (!isValid) {
-              toast.error("Please fill in all required fields");
-              return;
-            }
-            console.log(selectedStack);
-          }}
+          onClick={handleCreateProject}
         >
           Continue
         </button>
