@@ -14,10 +14,10 @@ import { AuthProvider } from "./contexts/auth_context";
 const App = () => {
   return (
     <Router>
-      <Header />
-      <Routes>
-        {routes.map((route, index) => {
-          const Layout = route.layout;
+        <Header />
+          <Routes>
+          {routes.map((route, index) => {
+            const Layout = route.layout;
           return (
             <Route
               key={index}
@@ -27,8 +27,8 @@ const App = () => {
               }
             />
           );
-        })}
-      </Routes>
+          })}
+        </Routes>
       <Footer />
     </Router>
   );
