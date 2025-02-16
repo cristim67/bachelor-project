@@ -9,6 +9,7 @@ backend:
         name: python
         packageManager: pip
     path: server
+    runtime: python3.13.x
 frontend:
     environment:
         VITE_API_URL: ${{ backend.functions.fastapi.url }}
