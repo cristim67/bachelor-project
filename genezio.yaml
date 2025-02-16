@@ -2,13 +2,14 @@ backend:
     functions:
         - entry: app.py
           handler: app
-          name: function-fastapi
+          name: fastapi
           path: .
           type: httpServer
     language:
         name: python
         packageManager: pip
     path: server
+    runtime: python3.13.x
 frontend:
     environment:
         VITE_API_URL: ${{ backend.functions.fastapi.url }}
@@ -20,7 +21,12 @@ frontend:
             - npm run build
         deploy:
             - npm install
-    subdomain: papayawhip-those-macaw
+    subdomain: bachelor-project
 name: bachelor-project
 region: eu-central-1
 yamlVersion: 2
+services:
+    databases:
+        - name: bachelor-project
+          region: eu-central-1
+          type: mongo-atlas
