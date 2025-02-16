@@ -3,12 +3,12 @@ from beanie import init_beanie
 from models.user import User
 from models.active_session import ActiveSession
 from models.project import Project
-from config.env_handler import MONGO_DB_DATABASE_URL
+from config.env_handler import BACHELOR_PROJECT_DATABASE_URL
 
 class DatabaseConnection:
     def __init__(self):
-        self.client = AsyncIOMotorClient(MONGO_DB_DATABASE_URL)
-        self.db = self.client['mongo-db']
+        self.client = AsyncIOMotorClient(BACHELOR_PROJECT_DATABASE_URL)
+        self.db = self.client['bachelor-project']
         
     async def initialize(self):
         try:
