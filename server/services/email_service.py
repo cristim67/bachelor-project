@@ -3,6 +3,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from config.env_handler import SMTP_PASSWORD, SMTP_PORT, SMTP_SERVER, SMTP_USERNAME
+from config.logger import logger
 
 
 class EmailService:
@@ -30,7 +31,7 @@ class EmailService:
             return True
 
         except Exception as e:
-            print(f"Error sending email: {str(e)}")
+            logger.error(f"Error sending email: {str(e)}")
             return False
 
         finally:

@@ -16,3 +16,4 @@ requests
 boto3
 black
 isort
+pre-commit
