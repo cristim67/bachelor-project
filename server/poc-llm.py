@@ -4,6 +4,7 @@ import uuid
 from typing import Iterator
 
 import dotenv
+from loguru import logger
 from openai import OpenAI
 
 dotenv.load_dotenv()
@@ -88,8 +89,8 @@ def create_project_from_json(json_response: str | Iterator[str]) -> str:
         json_response = json_response.strip()
         data = json.loads(json_response)
     except json.JSONDecodeError as e:
-        print(f"Error parsing JSON: {e}")
-        print(f"Received JSON string: {json_response}")
+        logger.error(f"Error parsing JSON: {e}")
+        logger.error(f"Received JSON string: {json_response}")
         raise
 
     items = data.get("structure", []) if isinstance(data, dict) else [data]
@@ -116,9 +117,9 @@ if __name__ == "__main__":
     json_response = generate_project_json(
         "Simple MONGO Crud App with create user, get user, update user, delete user in Express"
     )
-    print(json_response)
+    logger.info(json_response)
     project_id = create_project_from_json(json_response)
-    print(project_id)
+    logger.info(project_id)
 
     # run genezio analyze in "./projects/" + project_id
     os.chdir(f"./projects/{project_id}")
