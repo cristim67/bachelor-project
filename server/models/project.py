@@ -2,6 +2,7 @@ from beanie import Document
 from datetime import datetime
 from typing import Optional
 
+
 class Project(Document):
     idea: str
     stack: dict

@@ -3,6 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from config.env_handler import SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD
 
+
 class EmailService:
     def __init__(self):
         self.smtp_server = SMTP_SERVER
@@ -12,12 +13,12 @@ class EmailService:
 
     def send_email(self, to: str, subject: str, body: str, is_html: bool = False):
         try:
-            message = MIMEMultipart('alternative')
-            message['Subject'] = subject
-            message['From'] = self.smtp_username
-            message['To'] = to
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = self.smtp_username
+            message["To"] = to
 
-            content_type = 'html' if is_html else 'plain'
+            content_type = "html" if is_html else "plain"
             message.attach(MIMEText(body, content_type))
 
             self.server = smtplib.SMTP(self.smtp_server, self.smtp_port)
@@ -34,6 +35,6 @@ class EmailService:
         finally:
             if self.server:
                 self.server.quit()
-        
+
 
 email_service = EmailService()

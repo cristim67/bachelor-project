@@ -8,6 +8,7 @@ from typing import Callable
 
 RequestResponseEndpoint = Callable[[Request], Response]
 
+
 class NotFoundHandlerMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
         try:
@@ -20,6 +21,6 @@ class NotFoundHandlerMiddleware(BaseHTTPMiddleware):
                 return RedirectResponse(url="/docs")
             raise e
 
+
 def create_not_found_handler(app: FastAPI):
     app.add_middleware(NotFoundHandlerMiddleware)
-    
