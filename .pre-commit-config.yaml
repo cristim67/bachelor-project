@@ -24,7 +24,14 @@ repos:
 
       - id: black
         name: run black for server linting
-        entry: bash -c 'black server'
+        entry: bash -c 'black --line-length 120 server'
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: isort
+        name: run isort for server
+        entry: bash -c 'isort --profile black server'
         language: system
         pass_filenames: false
         always_run: true

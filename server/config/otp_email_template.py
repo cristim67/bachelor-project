@@ -1,4 +1,4 @@
-from config.env_handler import API_URL, OTP_EXPIRATION_MINUTES, FRONTEND_URL
+from config.env_handler import API_URL, FRONTEND_URL, OTP_EXPIRATION_MINUTES
 
 otp_email_template_html = """
 <html>

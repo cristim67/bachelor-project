@@ -1,14 +1,12 @@
-from fastapi import APIRouter, Header, HTTPException
-from dtos.project import ProjectInput
 from controllers.project_controller import ProjectController
+from dtos.project import ProjectInput
+from fastapi import APIRouter, Header, HTTPException
 
 router = APIRouter()
 
 
 @router.post("/create")
-async def create_project(
-    project_input: ProjectInput, authorization: str = Header(None)
-):
+async def create_project(project_input: ProjectInput, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No session token provided")
 

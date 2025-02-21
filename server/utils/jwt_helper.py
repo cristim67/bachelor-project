@@ -1,11 +1,12 @@
-from fastapi import HTTPException
-from datetime import datetime, timedelta
-from jose import jwt
-from passlib.context import CryptContext
-from config.env_handler import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-from typing import Optional
 import random
 import string
+from datetime import datetime, timedelta
+from typing import Optional
+
+from config.env_handler import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
+from fastapi import HTTPException
+from jose import jwt
+from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 

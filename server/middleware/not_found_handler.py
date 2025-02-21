@@ -1,10 +1,10 @@
-from starlette.responses import RedirectResponse
-from fastapi import HTTPException
-from fastapi import FastAPI
+from typing import Callable
+
+from fastapi import FastAPI, HTTPException
 from fastapi.requests import Request
 from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from typing import Callable
+from starlette.responses import RedirectResponse
 
 RequestResponseEndpoint = Callable[[Request], Response]
 

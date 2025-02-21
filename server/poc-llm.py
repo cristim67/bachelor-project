@@ -1,9 +1,10 @@
-from typing import Iterator
+import json
 import os
 import uuid
-import json
-from openai import OpenAI
+from typing import Iterator
+
 import dotenv
+from openai import OpenAI
 
 dotenv.load_dotenv()
 
@@ -105,11 +106,7 @@ def create_project_from_json(json_response: str | Iterator[str]) -> str:
             os.makedirs(file_path, exist_ok=True)
         else:
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            content = (
-                json.dumps(content, indent=2)
-                if isinstance(content, (dict, list))
-                else content
-            )
+            content = json.dumps(content, indent=2) if isinstance(content, (dict, list)) else content
             with open(file_path, "w") as f:
                 f.write(content)
     return project_id
@@ -138,9 +135,7 @@ if __name__ == "__main__":
 
         content = re.sub(
             r"(- name: .*?\n.*?type: mongo-atlas)",
-            lambda m: m.group(0).replace(
-                m.group(0).split("\n")[0], "- name: my-mongo-db"
-            ),
+            lambda m: m.group(0).replace(m.group(0).split("\n")[0], "- name: my-mongo-db"),
             content,
             flags=re.DOTALL,
         )

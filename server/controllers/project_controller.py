@@ -1,14 +1,15 @@
+from datetime import datetime
+
 import boto3
 from config.env_handler import (
     AWS_ACCESS_KEY_ID,
-    AWS_SECRET_ACCESS_KEY,
-    AWS_REGION,
     AWS_BUCKET_NAME,
+    AWS_REGION,
+    AWS_SECRET_ACCESS_KEY,
 )
-from models.project import Project
-from dtos.project import ProjectInput
 from controllers.session_controller import SessionController
-from datetime import datetime
+from dtos.project import ProjectInput
+from models.project import Project
 
 
 class ProjectController:

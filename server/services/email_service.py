@@ -1,7 +1,8 @@
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from config.env_handler import SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD
+from email.mime.text import MIMEText
+
+from config.env_handler import SMTP_PASSWORD, SMTP_PORT, SMTP_SERVER, SMTP_USERNAME
 
 
 class EmailService:

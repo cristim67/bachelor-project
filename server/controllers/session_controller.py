@@ -1,6 +1,7 @@
-from models.active_session import ActiveSession
 from datetime import datetime, timedelta
+
 from config.env_handler import ACCESS_TOKEN_EXPIRE_MINUTES
+from models.active_session import ActiveSession
 
 
 class SessionController:

@@ -1,36 +1,37 @@
-from fastapi import HTTPException
-from beanie import PydanticObjectId
 from datetime import datetime, timedelta
-from models.user import User
-from dtos.user import (
-    UserInput,
-    UserUpdate,
-    UserLogin,
-    UserLogout,
-    GoogleLogin,
-    ForgotPassword,
-)
-from models.active_session import ActiveSession
-from controllers.session_controller import SessionController
-from utils.jwt_helper import (
-    create_access_token,
-    hash_password,
-    verify_password,
-    generate_random_password,
-)
-from utils.validate_helper import is_valid_email, is_valid_password
-from utils.otp_helper import generate_otp_code, is_otp_code_valid
-from services.email_service import email_service
+from typing import Tuple
+
+from beanie import PydanticObjectId
+from config.env_handler import GOOGLE_CLIENT_ID, OTP_EXPIRATION_MINUTES
 from config.otp_email_template import (
     otp_email_template,
     otp_forgot_password_email_template,
     otp_notification_email_template,
 )
-from config.env_handler import GOOGLE_CLIENT_ID, OTP_EXPIRATION_MINUTES
-from google.oauth2 import id_token
-from google.auth.transport import requests
-from typing import Tuple
+from controllers.session_controller import SessionController
 from db.connection import db_connection
+from dtos.user import (
+    ForgotPassword,
+    GoogleLogin,
+    UserInput,
+    UserLogin,
+    UserLogout,
+    UserUpdate,
+)
+from fastapi import HTTPException
+from google.auth.transport import requests
+from google.oauth2 import id_token
+from models.active_session import ActiveSession
+from models.user import User
+from services.email_service import email_service
+from utils.jwt_helper import (
+    create_access_token,
+    generate_random_password,
+    hash_password,
+    verify_password,
+)
+from utils.otp_helper import generate_otp_code, is_otp_code_valid
+from utils.validate_helper import is_valid_email, is_valid_password
 
 
 class AuthController:
@@ -81,8 +82,7 @@ class AuthController:
                 {
                     "$set": {
                         "otp_code": otp_code,
-                        "otp_expiration": datetime.now()
-                        + timedelta(minutes=OTP_EXPIRATION_MINUTES),
+                        "otp_expiration": datetime.now() + timedelta(minutes=OTP_EXPIRATION_MINUTES),
                     }
                 },
             )
@@ -135,9 +135,7 @@ class AuthController:
         if not user:
             raise HTTPException(status_code=400, detail="User already verified")
         if user.email != email:
-            raise HTTPException(
-                status_code=400, detail="OTP code does not match the email"
-            )
+            raise HTTPException(status_code=400, detail="OTP code does not match the email")
         if user.otp_expiration < datetime.now():
             raise HTTPException(status_code=400, detail="OTP code expired")
         if user.verified:
@@ -157,9 +155,7 @@ class AuthController:
         if not user:
             raise HTTPException(status_code=400, detail="User not found")
         if user.auth_provider != "email&password":
-            raise HTTPException(
-                status_code=400, detail="User is not registered with email and password"
-            )
+            raise HTTPException(status_code=400, detail="User is not registered with email and password")
 
         otp_code = generate_otp_code()
         email_service.send_email(
@@ -184,13 +180,9 @@ class AuthController:
         if not user:
             raise HTTPException(status_code=400, detail="User not found")
         if user.email != email:
-            raise HTTPException(
-                status_code=400, detail="OTP code does not match the email"
-            )
+            raise HTTPException(status_code=400, detail="OTP code does not match the email")
         if user.auth_provider != "email&password":
-            raise HTTPException(
-                status_code=400, detail="User is not registered with email and password"
-            )
+            raise HTTPException(status_code=400, detail="User is not registered with email and password")
         if user.otp_expiration < datetime.now():
             raise HTTPException(status_code=400, detail="OTP code expired")
 
@@ -219,9 +211,7 @@ class AuthController:
             raise HTTPException(status_code=400, detail="Invalid credential")
 
         try:
-            idinfo = id_token.verify_oauth2_token(
-                credential.credential, requests.Request(), GOOGLE_CLIENT_ID
-            )
+            idinfo = id_token.verify_oauth2_token(credential.credential, requests.Request(), GOOGLE_CLIENT_ID)
 
             email = idinfo["email"]
 

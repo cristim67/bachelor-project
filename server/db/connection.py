@@ -1,9 +1,9 @@
-from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
-from models.user import User
+from config.env_handler import BACHELOR_PROJECT_DATABASE_URL
 from models.active_session import ActiveSession
 from models.project import Project
-from config.env_handler import BACHELOR_PROJECT_DATABASE_URL
+from models.user import User
+from motor.motor_asyncio import AsyncIOMotorClient
 
 
 class DatabaseConnection:
@@ -13,9 +13,7 @@ class DatabaseConnection:
 
     async def initialize(self):
         try:
-            await init_beanie(
-                database=self.db, document_models=[User, ActiveSession, Project]
-            )
+            await init_beanie(database=self.db, document_models=[User, ActiveSession, Project])
             print("Database connection initialized")
         except Exception as e:
             print(f"Error initializing database connection: {e}")

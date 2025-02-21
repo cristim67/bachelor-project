@@ -14,3 +14,5 @@ httpx
 google-auth
 requests
 boto3
+black
+isort

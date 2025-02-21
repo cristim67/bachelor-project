@@ -1,9 +1,10 @@
-import pytest
 import json
-from httpx import AsyncClient
-from data.value import register_input_data, login_input_data
-import sys
 import os
+import sys
+
+import pytest
+from data.value import login_input_data, register_input_data
+from httpx import AsyncClient
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest_asyncio
@@ -65,10 +66,7 @@ async def test_login_user_verified(client):
     )
     assert verify_otp_response.status_code == 200
     data = verify_otp_response.json()
-    assert (
-        data["message"]
-        == f"OTP verified successfully, you can now login at {FRONTEND_URL}/auth/login"
-    )
+    assert data["message"] == f"OTP verified successfully, you can now login at {FRONTEND_URL}/auth/login"
 
     login_response = await client.post("/auth/login", json=login_input_data)
     assert login_response.status_code == 200
@@ -87,7 +85,5 @@ async def test_logout(client):
     data = login_response.json()
     session_token = data["session_token"]
     print("Testing logout route with session_token:", session_token)
-    logout_response = await client.post(
-        "/auth/logout", json={"session_token": session_token}
-    )
+    logout_response = await client.post("/auth/logout", json={"session_token": session_token})
     assert logout_response.status_code == 200

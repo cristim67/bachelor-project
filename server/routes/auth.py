@@ -1,15 +1,15 @@
-from fastapi import APIRouter, Header
-from dtos.user import (
-    UserInput,
-    UserUpdate,
-    UserLogin,
-    UserLogout,
-    GoogleLogin,
-    ForgotPassword,
-)
+from config.env_handler import FRONTEND_URL
 from controllers.auth_controller import AuthController
 from controllers.session_controller import SessionController
-from config.env_handler import FRONTEND_URL
+from dtos.user import (
+    ForgotPassword,
+    GoogleLogin,
+    UserInput,
+    UserLogin,
+    UserLogout,
+    UserUpdate,
+)
+from fastapi import APIRouter, Header
 
 router = APIRouter()
 
