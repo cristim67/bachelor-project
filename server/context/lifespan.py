@@ -1,3 +1,4 @@
+import time
 from contextlib import asynccontextmanager
 
 from config.logger import logger
@@ -9,7 +10,9 @@ from fastapi import FastAPI
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting database connection")
+    start_time = time.time()
     await db_connection.initialize()
+    logger.info(f"Database connection initialized in {time.time() - start_time:.2f} seconds")
     yield
     # Shutdown
     logger.info("Closing database connection")
