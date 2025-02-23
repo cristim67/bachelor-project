@@ -1,6 +1,6 @@
-from controllers.project_controller import ProjectController
 from dtos.project import ProjectInput
 from fastapi import APIRouter, Header, HTTPException
+from repository.project import ProjectRepository
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ async def create_project(project_input: ProjectInput, authorization: str = Heade
 
     project_input_dict = project_input.model_dump()
 
-    project = await ProjectController.create_project(project_input_dict, session_token)
+    project = await ProjectRepository.create_project(project_input_dict, session_token)
     return {"code": 200, "project": project}
 
 
@@ -25,5 +25,5 @@ async def get_project(id: str, authorization: str = Header(None)):
 
     session_token = authorization.split(" ")[1]
 
-    project = await ProjectController.get_project(id, session_token)
+    project = await ProjectRepository.get_project(id, session_token)
     return {"code": 200, "project": project}

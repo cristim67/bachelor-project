@@ -7,12 +7,12 @@ from config.env_handler import (
     AWS_REGION,
     AWS_SECRET_ACCESS_KEY,
 )
-from controllers.session_controller import SessionController
 from dtos.project import ProjectInput
 from models.project import Project
+from repository.session import SessionRepository
 
 
-class ProjectController:
+class ProjectRepository:
     def __init__(self):
         self.s3_client = boto3.client(
             "s3",
@@ -26,7 +26,7 @@ class ProjectController:
     # TODO: Zip the project and upload to S3
     @staticmethod
     async def create_project(project_input: ProjectInput, session_token: str):
-        session_controller = SessionController()
+        session_controller = SessionRepository()
         await session_controller.check_session_expiration(session_token)
 
         session = await session_controller.get_session(session_token)

@@ -8,7 +8,6 @@ from config.otp_email_template import (
     otp_forgot_password_email_template,
     otp_notification_email_template,
 )
-from controllers.session_controller import SessionController
 from db.connection import db_connection
 from dtos.user import (
     ForgotPassword,
@@ -23,6 +22,7 @@ from google.auth.transport import requests
 from google.oauth2 import id_token
 from models.active_session import ActiveSession
 from models.user import User
+from repository.session import SessionRepository
 from services.email_service import email_service
 from utils.jwt_helper import (
     create_access_token,
@@ -34,7 +34,7 @@ from utils.otp_helper import generate_otp_code, is_otp_code_valid
 from utils.validate_helper import is_valid_email, is_valid_password
 
 
-class AuthController:
+class AuthRepository:
     @staticmethod
     async def register_user(user_input: UserInput):
         if not is_valid_email(user_input.email):
@@ -65,7 +65,7 @@ class AuthController:
 
         created_user = await new_user.insert()
         session_token = create_access_token({"sub": str(created_user.id)})
-        await SessionController.add_session(session_token, created_user.id)
+        await SessionRepository.add_session(session_token, created_user.id)
 
         return created_user, session_token
 
@@ -98,7 +98,7 @@ class AuthController:
             )
 
         session_token = create_access_token({"sub": str(user.id)})
-        await SessionController.add_session(session_token, user.id)
+        await SessionRepository.add_session(session_token, user.id)
 
         return user, session_token
 
@@ -234,7 +234,7 @@ class AuthController:
                 await user.insert()
 
             session_token = create_access_token({"sub": str(user.id)})
-            await SessionController.add_session(session_token, user.id)
+            await SessionRepository.add_session(session_token, user.id)
 
             return user, session_token
 

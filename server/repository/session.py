@@ -4,7 +4,7 @@ from config.env_handler import ACCESS_TOKEN_EXPIRE_MINUTES
 from models.active_session import ActiveSession
 
 
-class SessionController:
+class SessionRepository:
     @staticmethod
     async def get_session(session_token: str):
         session = await ActiveSession.find_one({"session_token": session_token})
