@@ -7,6 +7,7 @@ from dtos.user import (
     UserUpdate,
 )
 from fastapi import APIRouter, Depends, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from repository.auth import AuthRepository
@@ -86,13 +87,23 @@ async def verify_otp_forgot_password(email: str, otp_code: str):
 async def check_session(credentials: HTTPAuthorizationCredentials = Depends(security)):
     session_token = credentials.credentials
     session = await SessionRepository.check_session_expiration(session_token)
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"code": status.HTTP_200_OK, "session": session})
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"code": status.HTTP_200_OK, "session": session},
+    )
 
 
 @router.post("/google-login")
 async def google_login(google_login: GoogleLogin):
     user, session_token = await AuthRepository.google_login(google_login)
+
+    user_dict = jsonable_encoder(user)
+
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"code": status.HTTP_200_OK, "user": user, "session_token": session_token},
+        content={
+            "code": status.HTTP_200_OK,
+            "user": user_dict,
+            "session_token": session_token,
+        },
     )
