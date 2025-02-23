@@ -1,7 +1,10 @@
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from config.env_handler import SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD
+from email.mime.text import MIMEText
+
+from config.env_handler import SMTP_PASSWORD, SMTP_PORT, SMTP_SERVER, SMTP_USERNAME
+from config.logger import logger
+
 
 class EmailService:
     def __init__(self):
@@ -12,12 +15,12 @@ class EmailService:
 
     def send_email(self, to: str, subject: str, body: str, is_html: bool = False):
         try:
-            message = MIMEMultipart('alternative')
-            message['Subject'] = subject
-            message['From'] = self.smtp_username
-            message['To'] = to
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = self.smtp_username
+            message["To"] = to
 
-            content_type = 'html' if is_html else 'plain'
+            content_type = "html" if is_html else "plain"
             message.attach(MIMEText(body, content_type))
 
             self.server = smtplib.SMTP(self.smtp_server, self.smtp_port)
@@ -28,12 +31,12 @@ class EmailService:
             return True
 
         except Exception as e:
-            print(f"Error sending email: {str(e)}")
+            logger.error(f"Error sending email: {str(e)}")
             return False
 
         finally:
             if self.server:
                 self.server.quit()
-        
+
 
 email_service = EmailService()

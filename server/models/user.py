@@ -1,11 +1,13 @@
-from beanie import Document
 from datetime import datetime
 from typing import Optional
+
+from beanie import Document
+
 
 class User(Document):
     username: str
     email: str
-    auth_provider: str 
+    auth_provider: str
     hashed_password: Optional[str] = None
     otp_code: Optional[str] = None
     otp_expiration: Optional[datetime] = None

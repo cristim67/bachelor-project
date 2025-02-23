@@ -1,13 +1,16 @@
 from contextlib import asynccontextmanager
+
+from config.logger import logger
 from db.connection import db_connection
 from fastapi import FastAPI
 
+
 @asynccontextmanager
-async def lifespan(app:FastAPI):
+async def lifespan(app: FastAPI):
     # Startup
-    print("Starting database connection")
+    logger.info("Starting database connection")
     await db_connection.initialize()
     yield
     # Shutdown
-    print("Closing database connection")
+    logger.info("Closing database connection")
     await db_connection.close_db()

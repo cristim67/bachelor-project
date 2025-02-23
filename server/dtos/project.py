@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class Stack(BaseModel):
     apiType: str
     language: str
@@ -17,11 +18,11 @@ class Stack(BaseModel):
             "database": self.database,
             "frontend": self.frontend,
             "css": self.css,
-            "projectType": self.projectType
+            "projectType": self.projectType,
         }
+
 
 class ProjectInput(BaseModel):
     idea: str
     is_public: bool = True
     stack: Stack
-
