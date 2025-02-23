@@ -4,7 +4,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from repository.session import SessionRepository
 
 
-class GenezioBearer(HTTPBearer):
+class BearerToken(HTTPBearer):
     async def __call__(self, request: Request):
         authorization = request.headers.get("Authorization", "").strip()
         if not authorization or not authorization.startswith("Bearer "):

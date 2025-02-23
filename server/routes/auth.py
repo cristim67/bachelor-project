@@ -12,11 +12,11 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from repository.auth import AuthRepository
 from repository.session import SessionRepository
-from routes.utils import GenezioBearer
+from routes.utils import BearerToken
 
 router = APIRouter()
 
-security = GenezioBearer()
+security = BearerToken()
 
 
 @router.post("/register")

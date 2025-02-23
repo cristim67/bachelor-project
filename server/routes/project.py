@@ -3,11 +3,11 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from repository.project import ProjectRepository
-from routes.utils import GenezioBearer
+from routes.utils import BearerToken
 
 router = APIRouter()
 
-security = GenezioBearer()
+security = BearerToken()
 
 
 @router.post("/create")

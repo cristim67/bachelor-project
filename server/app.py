@@ -3,7 +3,7 @@ from context.lifespan import lifespan
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from middleware.error_handler import create_error_handler
-from routes import auth, project
+from routes import auth, chat, project
 
 app = FastAPI(
     lifespan=lifespan,
@@ -39,6 +39,7 @@ create_error_handler(app)
 # Routes
 app.include_router(auth.router, prefix="/v1/auth", tags=["Auth"])
 app.include_router(project.router, prefix="/v1/project", tags=["Projects"])
+app.include_router(chat.router, prefix="/v1/chat", tags=["Chat"])
 
 if __name__ == "__main__":
     import uvicorn

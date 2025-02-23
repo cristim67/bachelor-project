@@ -14,7 +14,6 @@ from dtos.user import (
     GoogleLogin,
     UserInput,
     UserLogin,
-    UserLogout,
     UserUpdate,
 )
 from fastapi import HTTPException, status
