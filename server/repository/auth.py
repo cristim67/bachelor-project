@@ -17,7 +17,7 @@ from dtos.user import (
     UserLogout,
     UserUpdate,
 )
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from google.auth.transport import requests
 from google.oauth2 import id_token
 from models.active_session import ActiveSession
@@ -38,13 +38,13 @@ class AuthRepository:
     @staticmethod
     async def register_user(user_input: UserInput):
         if not is_valid_email(user_input.email):
-            raise HTTPException(status_code=400, detail="Invalid email")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email")
         if not is_valid_password(user_input.password):
-            raise HTTPException(status_code=400, detail="Invalid password")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid password")
 
         existing_user = await User.find_one({"email": user_input.email})
         if existing_user:
-            raise HTTPException(status_code=400, detail="Email already exists")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
 
         otp_code = generate_otp_code()
         email_service.send_email(
@@ -73,7 +73,7 @@ class AuthRepository:
     async def login(user_login: UserLogin):
         user = await User.find_one({"email": user_login.email})
         if not user or not verify_password(user_login.password, user.hashed_password):
-            raise HTTPException(status_code=400, detail="Invalid email or password")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email or password")
 
         if not user.verified:
             otp_code = generate_otp_code()
@@ -93,7 +93,7 @@ class AuthRepository:
                 is_html=True,
             )
             raise HTTPException(
-                status_code=401,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not verified, please check your email for the OTP code",
             )
 
@@ -111,7 +111,7 @@ class AuthRepository:
         user = await User.find_one({"_id": PydanticObjectId(id)})
 
         if not user:
-            raise HTTPException(status_code=400, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
         if properties.username:
             user.username = properties.username
         if properties.email:
@@ -129,17 +129,17 @@ class AuthRepository:
     @staticmethod
     async def verify_otp(email: str, otp_code: str):
         if not is_otp_code_valid(otp_code):
-            raise HTTPException(status_code=400, detail="Invalid OTP code")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP code")
 
         user = await User.find_one({"otp_code": otp_code})
         if not user:
-            raise HTTPException(status_code=400, detail="User already verified")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already verified")
         if user.email != email:
-            raise HTTPException(status_code=400, detail="OTP code does not match the email")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP code does not match the email")
         if user.otp_expiration < datetime.now():
-            raise HTTPException(status_code=400, detail="OTP code expired")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP code expired")
         if user.verified:
-            raise HTTPException(status_code=400, detail="User already verified")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already verified")
 
         user.verified = True
         user.otp_code = None
@@ -153,9 +153,12 @@ class AuthRepository:
     async def forgot_password(forgot_password: ForgotPassword):
         user = await User.find_one({"email": forgot_password.email})
         if not user:
-            raise HTTPException(status_code=400, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
         if user.auth_provider != "email&password":
-            raise HTTPException(status_code=400, detail="User is not registered with email and password")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User is not registered with email and password",
+            )
 
         otp_code = generate_otp_code()
         email_service.send_email(
@@ -174,17 +177,20 @@ class AuthRepository:
     @staticmethod
     async def verify_otp_forgot_password(email: str, otp_code: str):
         if not is_otp_code_valid(otp_code):
-            raise HTTPException(status_code=400, detail="Invalid OTP code")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP code")
 
         user = await User.find_one({"otp_code": otp_code})
         if not user:
-            raise HTTPException(status_code=400, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
         if user.email != email:
-            raise HTTPException(status_code=400, detail="OTP code does not match the email")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP code does not match the email")
         if user.auth_provider != "email&password":
-            raise HTTPException(status_code=400, detail="User is not registered with email and password")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User is not registered with email and password",
+            )
         if user.otp_expiration < datetime.now():
-            raise HTTPException(status_code=400, detail="OTP code expired")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP code expired")
 
         new_password = generate_random_password()
         user.hashed_password = hash_password(new_password)
@@ -208,7 +214,7 @@ class AuthRepository:
         await db_connection.initialize()
 
         if not credential.credential:
-            raise HTTPException(status_code=400, detail="Invalid credential")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credential")
 
         try:
             idinfo = id_token.verify_oauth2_token(credential.credential, requests.Request(), GOOGLE_CLIENT_ID)
@@ -219,7 +225,7 @@ class AuthRepository:
 
             if user and user.auth_provider != "google":
                 raise HTTPException(
-                    status_code=400,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                     detail="An account with this email already exists. Please login with email and password.",
                 )
 
@@ -239,4 +245,4 @@ class AuthRepository:
             return user, session_token
 
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid Google token")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Google token")

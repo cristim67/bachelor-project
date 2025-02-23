@@ -35,7 +35,7 @@ export async function isAuthenticated() {
   }
 
   try {
-    const response = await instance.get("/auth/session/check");
+    const response = await instance.get("/v1/auth/session/check");
     return response.data;
   } catch (error) {
     console.log(error);
@@ -44,7 +44,7 @@ export async function isAuthenticated() {
 }
 
 export async function login(email: string, password: string) {
-  const response = await instance.post("/auth/login", {
+  const response = await instance.post("/v1/auth/login", {
     email,
     password,
   });
@@ -58,7 +58,7 @@ export async function login(email: string, password: string) {
 }
 
 export async function googleLogin(credential: string) {
-  const response = await instance.post("/auth/google-login", {
+  const response = await instance.post("/v1/auth/google-login", {
     credential,
   });
 
@@ -71,7 +71,7 @@ export async function googleLogin(credential: string) {
 }
 
 export async function logout() {
-  const response = await instance.post("/auth/logout");
+  const response = await instance.post("/v1/auth/logout");
   localStorage.removeItem("apiToken");
   localStorage.removeItem("user");
   window.location.reload();
@@ -83,7 +83,7 @@ export async function register(
   email: string,
   password: string,
 ) {
-  const response = await instance.post("/auth/register", {
+  const response = await instance.post("/v1/auth/register", {
     username,
     email,
     password,
@@ -92,18 +92,18 @@ export async function register(
 }
 
 export async function forgotPassword(email: string) {
-  const response = await instance.post("/auth/user/forgot-password", {
+  const response = await instance.post("/v1/auth/user/forgot-password", {
     email,
   });
   return response.data;
 }
 
 export async function createProject(project: ProjectType) {
-  const response = await instance.post("/project/create", project);
+  const response = await instance.post("/v1/project/create", project);
   return response.data;
 }
 
 export async function getProject(id: string) {
-  const response = await instance.get(`/project/get/${id}`);
+  const response = await instance.get(`/v1/project/get/${id}`);
   return response.data;
 }

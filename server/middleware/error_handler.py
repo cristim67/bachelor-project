@@ -1,5 +1,5 @@
 from config.logger import logger
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -20,7 +20,10 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
             import traceback
 
             logger.error(f"Stack trace: {''.join(traceback.format_tb(ex.__traceback__))}")
-            return JSONResponse(status_code=500, content={"message": "Internal server error"})
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"message": "Internal server error"},
+            )
 
 
 def create_error_handler(app: FastAPI):
