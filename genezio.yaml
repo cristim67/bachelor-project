@@ -13,7 +13,6 @@ backend:
 frontend:
     environment:
         VITE_API_URL: ${{ backend.functions.fastapi.url }}
-        VITE_API_URL_FASTAPI: ${{ backend.functions.fastapi.url }}
     path: client
     publish: dist
     scripts:
@@ -21,6 +20,8 @@ frontend:
             - npm run build
         deploy:
             - npm install
+        start:
+            - npm run dev
     subdomain: bachelor-project
 name: bachelor-project
 region: eu-central-1
