@@ -1,6 +1,9 @@
 fastapi
 uvicorn
 openai
+anthropic
+pymilvus
+gitpython
 python-dotenv
 motor
 pydantic
