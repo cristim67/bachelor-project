@@ -22,18 +22,24 @@ security = GenezioBearer()
 @router.post("/register")
 async def register_user(user_input: UserInput):
     user, session_token = await AuthRepository.register_user(user_input)
+
+    user_dict = jsonable_encoder(user)
+
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"code": status.HTTP_200_OK, "user": user, "session_token": session_token},
+        content={"code": status.HTTP_200_OK, "user": user_dict, "session_token": session_token},
     )
 
 
 @router.post("/login")
 async def login(user_login: UserLogin):
     user, session_token = await AuthRepository.login(user_login)
+
+    user_dict = jsonable_encoder(user)
+
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"code": status.HTTP_200_OK, "user": user, "session_token": session_token},
+        content={"code": status.HTTP_200_OK, "user": user_dict, "session_token": session_token},
     )
 
 
@@ -47,7 +53,10 @@ async def logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
 @router.post("/user/update")
 async def update_user(user_update: UserUpdate):
     user = await AuthRepository.update_user(user_update)
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"code": status.HTTP_200_OK, "user": user})
+
+    user_dict = jsonable_encoder(user)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"code": status.HTTP_200_OK, "user": user_dict})
 
 
 @router.get("/user/verify-otp")
@@ -85,8 +94,7 @@ async def verify_otp_forgot_password(email: str, otp_code: str):
 
 @router.get("/session/check")
 async def check_session(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    session_token = credentials.credentials
-    session = await SessionRepository.check_session_expiration(session_token)
+    session = await SessionRepository.check_session_expiration(credentials.credentials)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"code": status.HTTP_200_OK, "session": session},
