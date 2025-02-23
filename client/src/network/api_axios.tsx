@@ -49,7 +49,7 @@ export async function login(email: string, password: string) {
     password,
   });
 
-  if (response.data.session) {
+  if (response.data.session_token) {
     localStorage.setItem("apiToken", response.data.session_token);
     localStorage.setItem("user", JSON.stringify(response.data.user));
   }
