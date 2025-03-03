@@ -10,5 +10,9 @@ updates:
     ignore:
       - dependency-name: "react"
         versions: ["18.3.1"]
+      - dependency-name: "tailwindcss"
+        versions: ["3.4.17"]
+      - dependency-name: "postcss"
+        versions: ["8.5.1"]
     labels:
       - "dependencies" 
