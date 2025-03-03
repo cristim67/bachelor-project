@@ -28,6 +28,8 @@ updates:
         versions: ["2.2.4"]
       - dependency-name: "vitest-coverage-v8"
         versions: ["2.2.4"]
-        
+      - dependency-name: "eslint"
+        versions: ["8.57.1"]
+
     labels:
       - "dependencies" 
