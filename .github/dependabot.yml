@@ -20,6 +20,14 @@ updates:
         versions: ["6.21.0"]
       - dependency-name: "react-dom"
         versions: ["18.3.1"]
+      - dependency-name: "@types/react-dom"
+        versions: ["18.3.5"]
+      - dependency-name: "typescript"
+        versions: ["5.7.2"]
+      - dependency-name: "vitest"
+        versions: ["2.2.4"]
+      - dependency-name: "vitest-coverage-v8"
+        versions: ["2.2.4"]
         
     labels:
       - "dependencies" 
