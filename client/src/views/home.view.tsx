@@ -81,12 +81,10 @@ export const Home = () => {
         ? Object.values(selectedStack).every((value) => value !== "")
         : projectType === "backend"
         ? ["apiType", "language", "framework", "database"].every(
-            (key) =>
-              selectedStack[key as keyof typeof selectedStack] !== "",
+            (key) => selectedStack[key as keyof typeof selectedStack] !== "",
           )
         : ["frontend", "css"].every(
-            (key) =>
-              selectedStack[key as keyof typeof selectedStack] !== "",
+            (key) => selectedStack[key as keyof typeof selectedStack] !== "",
           );
 
     if (!isValid) {
@@ -100,14 +98,12 @@ export const Home = () => {
       is_public: isPublic,
     });
 
-    const projectId = response.id;
-    console.log(response);
-    
+    const projectId = response.project._id;
     toast.success("Project created successfully");
     setTimeout(() => {
       navigate(`/projects/${projectId}`);
     }, 1000);
-  }
+  };
 
   const renderStackSelection = () => (
     <div className="w-full max-w-4xl space-y-6">
