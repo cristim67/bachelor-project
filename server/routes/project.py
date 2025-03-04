@@ -25,7 +25,5 @@ async def create_project(project_input: ProjectInput, credentials: HTTPAuthoriza
 @router.get("/get/{id}")
 async def get_project(id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
     session_token = credentials.credentials
-
-    project = await ProjectRepository.get_project(id, session_token)
-    project_dict = jsonable_encoder(project)
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"code": status.HTTP_200_OK, "project": project_dict})
+    project = await ProjectRepository().get_project(id, session_token)
+    return {"code": 200, "project": project}

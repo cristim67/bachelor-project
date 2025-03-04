@@ -65,7 +65,10 @@ IMPORTANT:
 - Every file must contain complete, working code
 - Follow FastAPI and Python best practices
 - Include proper type hints and documentation
-- Make sure all imports are correct and complete"""
+- Make sure all imports are correct and complete
+- ALWAYS use absolute imports, NEVER use relative imports (.. or .)
+- ALWAYS in entry file, you need to include a __main__ block with uvicorn.run
+"""
 
 wrapping_prompt: str = """<<USER_PROMPT>>"""
 
