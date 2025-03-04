@@ -38,6 +38,8 @@ Your response should include:
    - Include only the files and folders needed for this specific project
    - ALWAYS use .env.example, NEVER .env
    - NEVER put /tests folder in the project structure
+   - In the entry file, you need to include a __main__ block with uvicorn.run
+   - Use absolute imports instead of relative imports (no .. or .)
 
 4. Required Features:
    - List of endpoints needed:
@@ -72,7 +74,9 @@ DO NOT generate any code, setup instructions, or implementation details. Your ON
 
 DO NOT ask any questions. Instead, analyze the requirements and provide appropriate structure.
 
-IMPORTANT: ALWAYS use .env.example for environment variables, NEVER .env.
+IMPORTANT: 
+- ALWAYS use .env.example for environment variables, NEVER .env
+- ALWAYS use absolute imports, NEVER use relative imports (.. or .)
 """
 
 wrapping_prompt: str = """<<USER_PROMPT>>"""

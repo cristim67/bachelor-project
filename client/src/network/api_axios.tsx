@@ -31,15 +31,23 @@ export async function isAuthenticated() {
 
   if (!token) {
     localStorage.removeItem("user");
-    return false;
+    return { isValid: false };
   }
 
   try {
     const response = await instance.get("/v1/auth/session/check");
-    return response.data;
+    if (response.status === 200) {
+      return { isValid: true };
+    } else {
+      localStorage.removeItem("apiToken");
+      localStorage.removeItem("user");
+      return { isValid: false };
+    }
   } catch (error) {
     console.log(error);
-    return false;
+    localStorage.removeItem("apiToken");
+    localStorage.removeItem("user");
+    return { isValid: false };
   }
 }
 
@@ -105,5 +113,21 @@ export async function createProject(project: ProjectType) {
 
 export async function getProject(id: string) {
   const response = await instance.get(`/v1/project/get/${id}`);
+  return response.data;
+}
+
+export async function generateProject(message: string, id: string) {
+  const response = await instance.post("/v1/chat/project-generator", {
+    message: message,
+    history: [],
+    agent: "project_generator",
+    model: "gpt-4o",
+    options: {
+      streaming: true,
+    },
+    project: {
+      projectId: id,
+    },
+  });
   return response.data;
 }

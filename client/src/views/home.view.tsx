@@ -92,6 +92,15 @@ export const Home = () => {
       return;
     }
 
+    localStorage.setItem(
+      "project",
+      JSON.stringify({
+        prompt: prompt,
+        stack: { ...selectedStack, projectType: projectType },
+        is_public: isPublic,
+      }),
+    );
+
     const response = await createProject({
       idea: prompt,
       stack: { ...selectedStack, projectType: projectType },

@@ -4,7 +4,7 @@ from pydantic import UUID4, BaseModel, Field
 
 
 class ProjectInfo(BaseModel):
-    projectId: UUID4 = Field(..., description="Project ID")
+    projectId: str = Field(None, description="Project ID")
 
 
 class AgentOptions(BaseModel):
