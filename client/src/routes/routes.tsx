@@ -3,7 +3,7 @@ import { NotFound } from "../views/404";
 import { ForgotPassword } from "../views/forgot-password";
 import { Home } from "../views/home.view";
 import { Login } from "../views/login.view";
-import {Project} from "../views/project.view";
+import { Project } from "../views/project.view";
 import { Register } from "../views/register.view";
 
 export const routes = [
@@ -24,7 +24,7 @@ export const routes = [
     element: <ForgotPassword />,
   },
   {
-    path: "/project/:id",
+    path: "/projects/:id",
     element: <Project />,
     layout: AuthLayout,
   },

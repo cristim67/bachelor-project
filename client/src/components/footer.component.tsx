@@ -5,9 +5,23 @@ export const Footer = () => {
   const { theme, setTheme } = useTheme();
 
   return (
-    <footer className="fixed bottom-0 w-full p-4 border-t shadow-sm bg-light-surface dark:bg-dark-surface border-light-border dark:border-dark-border">
+    <footer
+      className={`fixed bottom-0 w-full p-4 border-t shadow-sm 
+      ${
+        theme === "dark"
+          ? "bg-[#121212] border-dark-border"
+          : "bg-white border-light-border"
+      }`}
+    >
       <div className="container flex items-center justify-between px-4 mx-auto max-w-7xl">
-        <div className="text-sm transition-colors text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary">
+        <div
+          className={`text-sm transition-colors 
+          ${
+            theme === "dark"
+              ? "text-dark-text-secondary hover:text-dark-text-primary"
+              : "text-light-text-secondary hover:text-light-text-primary"
+          }`}
+        >
           Copyright ©️ {new Date().getFullYear()} Cristi Miloiu. All rights
           reserved.
         </div>

@@ -11,8 +11,6 @@ class ProjectRepository:
     def __init__(self):
         self.s3_service = S3Service()
 
-    # TODO: Create project | LLM
-    # TODO: Zip the project and upload to S3
     @staticmethod
     async def create_project(project_input: ProjectInput, session_token: str):
         session = await SessionRepository.get_session(session_token)
