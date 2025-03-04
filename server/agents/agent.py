@@ -34,16 +34,23 @@ class Agent(ABC):
         """
         pass
 
-    async def ask(self, prompt: str, model: str = None, streaming: bool = False):
+    async def ask(
+        self,
+        system_prompt: str,
+        prompt: str,
+        model: str = None,
+        streaming: bool = False,
+    ):
         if model is None:
             model = ModelConfig.DEFAULT_MODELS[LLMProvider.OPENAI]
 
         if streaming:
-            return await self._stream(prompt, model)
-        return self._shoot(prompt, model)
+            return await self._stream(system_prompt, prompt, model)
+        return self._shoot(system_prompt, prompt, model)
 
-    async def _stream(self, prompt: str, model: str):
+    async def _stream(self, system_prompt: str, prompt: str, model: str):
         provider = ModelConfig.get_model_provider(model)
+        provider = LLMProvider.OPENAI
         client = self.llm_client.get_client(provider, streaming=True)
 
         try:
@@ -56,17 +63,23 @@ class Agent(ABC):
                 if provider == LLMProvider.OPENAI:
                     openai_client: OpenAI = client
                     async with openai_client.beta.chat.completions.stream(
-                        messages=[{"role": "user", "content": prompt}],
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": prompt},
+                        ],
                         model=model,
                     ) as stream:
                         async for event in stream:
                             if event.type == "content.delta":
                                 yield event.delta
 
-                else:  # ANTHROPIC
+                elif provider == LLMProvider.ANTHROPIC:
                     anthropic_client: Anthropic = client
                     message = await anthropic_client.messages.create(
-                        messages=[{"role": "user", "content": prompt}],
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": prompt},
+                        ],
                         model=model,
                         max_tokens=2048,
                         stream=True,
@@ -74,6 +87,8 @@ class Agent(ABC):
                     async for event in message:
                         if event.type == "content_block_delta":
                             yield event.delta.text
+                else:
+                    raise ValueError(f"Unknown model provider: {provider}")
 
             return StreamingResponse(event_generator(), media_type="text/plain")
 
@@ -82,7 +97,7 @@ class Agent(ABC):
             logger.error(f"Agent Response Error: {error_message}")
             raise Exception(f"An error occurred while processing your request: {error_message}")
 
-    def _shoot(self, prompt: str, model: str):
+    def _shoot(self, system_prompt: str, prompt: str, model: str):
         provider = ModelConfig.get_model_provider(model)
         client = self.llm_client.get_client(provider, streaming=False)
 
@@ -94,18 +109,26 @@ class Agent(ABC):
             if provider == LLMProvider.OPENAI:
                 openai_client: OpenAI = client
                 response = openai_client.chat.completions.create(
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": prompt},
+                    ],
                     model=model,
                 )
                 return response.choices[0].message.content
-            else:  # ANTHROPIC
+            elif provider == LLMProvider.ANTHROPIC:
                 anthropic_client: Anthropic = client
                 response = anthropic_client.messages.create(
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": prompt},
+                    ],
                     model=model,
                     max_tokens=2048,
                 )
                 return response.content[0].text
+            else:
+                raise ValueError(f"Unknown model provider: {provider}")
 
         except Exception as e:
             error_message = f"{str(e.__class__.__name__)}: {str(e)}"

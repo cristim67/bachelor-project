@@ -19,7 +19,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     history: Optional[List[ChatMessage]] = Field(None, description="List of previous messages in the conversation")
-    agent: str = Field("simple", description="Agent to use for the chat")
+    agent: str = Field("backend_requirements", description="Agent to use for the chat")
     model: str = Field("gpt-4o", description="LLM model to use for the agent")
     options: Optional[AgentOptions] = Field(None, description="Optional agent options")
     project: Optional[ProjectInfo] = Field(None, description="Optional project information")

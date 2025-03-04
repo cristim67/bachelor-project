@@ -73,12 +73,6 @@ DO NOT generate any code, setup instructions, or implementation details. Your ON
 DO NOT ask any questions. Instead, analyze the requirements and provide appropriate structure.
 
 IMPORTANT: ALWAYS use .env.example for environment variables, NEVER .env.
-
-THE USER DESCRIPTION IS:
-
----
-<<USER_PROMPT>>
----
 """
 
 wrapping_prompt: str = """<<USER_PROMPT>>"""
@@ -101,7 +95,7 @@ class BackendRequirementsAgent(Agent):
         options: AgentOptions = None,
         **kwargs: Any,
     ) -> str:
-        prompt = self.system_prompt.replace("<<USER_PROMPT>>", message)
+        prompt = self.agent_prompt.replace("<<USER_PROMPT>>", message)
 
         logger.info(prompt)
-        return self.ask(prompt, model, options.streaming)
+        return self.ask(self.system_prompt, prompt, model, options.streaming)
