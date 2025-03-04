@@ -5,6 +5,7 @@ backend:
           name: fastapi
           path: .
           type: httpServer
+          timeout: 900
     language:
         name: python
         packageManager: pip
