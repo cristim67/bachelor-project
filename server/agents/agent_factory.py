@@ -5,7 +5,7 @@ from agents.agent import Agent
 
 
 class AgentType(str, Enum):
-    SIMPLE = "simple"
+    BACKEND_REQUIREMENTS = "backend_requirements"
     # TODO: Add other agent types
 
 

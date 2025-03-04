@@ -1,5 +1,7 @@
 from agents.agent_factory import AgentFactory, AgentType
-from agents.simple.simple import SimpleAgent
+from agents.backend_requirements_builder.backend_requirements_builder import (
+    BackendRequirementsAgent,
+)
 from config.logger import logger
 
 
@@ -8,7 +10,7 @@ async def register_agents():
     logger.info("Registering agents...")
 
     agents = [
-        (AgentType.SIMPLE, SimpleAgent),
+        (AgentType.BACKEND_REQUIREMENTS, BackendRequirementsAgent),
     ]
 
     for agent_type, agent_class in agents:
