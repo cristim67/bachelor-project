@@ -109,17 +109,33 @@ async def project_generator(
         )
 
         # Extract JSON from the response string
-        # Find content between ```json and ``` markers
-        json_match = re.search(r"```json\n(.*?)\n```", project_structure, re.DOTALL)
-        if not json_match:
+        # Try multiple patterns to find JSON content
+        json_patterns = [
+            r"```json\n(.*?)\n```",  # Standard markdown code block
+            r"```\n(.*?)\n```",  # Generic code block
+            r"\{.*\}",  # Raw JSON object
+        ]
+
+        json_content = None
+        for pattern in json_patterns:
+            json_match = re.search(pattern, project_structure, re.DOTALL)
+            if json_match:
+                try:
+                    # Try to parse the matched content
+                    json_content = json.loads(json_match.group(1))
+                    break
+                except json.JSONDecodeError:
+                    continue
+
+        if not json_content:
+            # Log the actual response for debugging
+            logger.error(f"Project generator response: {project_structure}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Could not find JSON structure in the response",
+                detail="Could not find valid JSON structure in the response. Please try again.",
             )
 
         try:
-            json_content = json.loads(json_match.group(1))
-
             zip_path = await create_files_for_s3_json_content(json_content, s3_folder_name)
             presigned_url = await upload_zip_to_s3(zip_path, s3_folder_name)
 
