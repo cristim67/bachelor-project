@@ -10,17 +10,6 @@ class Stack(BaseModel):
     css: str
     projectType: str
 
-    def dict(self):
-        return {
-            "apiType": self.apiType,
-            "language": self.language,
-            "framework": self.framework,
-            "database": self.database,
-            "frontend": self.frontend,
-            "css": self.css,
-            "projectType": self.projectType,
-        }
-
 
 class ProjectInput(BaseModel):
     idea: str
