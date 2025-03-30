@@ -30,6 +30,8 @@ updates:
         versions: ["2.2.4"]
       - dependency-name: "eslint"
         versions: ["8.57.1"]
+      - dependency-name: "@typescript-eslint/eslint-plugin"
+        versions: ["6.21.0"]
 
     labels:
       - "dependencies" 
