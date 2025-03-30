@@ -28,7 +28,7 @@ Your response should include:
 2. Technical Stack (MUST BE):
    - Express.js with ESM (all files must use .mjs extension)
    - Database: MongoDB (default) or PostgreSQL (if specified)
-   - API Type: REST (default)
+   - API Type: REST (default) or GraphQL (if specified)
    - Authentication: None by default (only include if explicitly requested)
 
 3. Project Structure:
