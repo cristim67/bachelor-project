@@ -30,8 +30,6 @@ updates:
         versions: ["2.2.4"]
       - dependency-name: "eslint"
         versions: ["8.57.1"]
-      - dependency-name: "@typescript-eslint/eslint-plugin"
-        versions: ["6.21.0"]
       - dependency-name: "autoprefixer"
         versions: ["10.4.20"]
       - dependency-name: "eslint-plugin-react-refresh"
