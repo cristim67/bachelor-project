@@ -196,7 +196,6 @@ export async function generateBackendRequirements(
       if (done) {
         // Process any remaining data in the buffer
         if (buffer.trim()) {
-          console.log("Received final chunk:", buffer);
           onChunk(buffer);
         }
         console.log("Streaming completed");
@@ -205,7 +204,6 @@ export async function generateBackendRequirements(
 
       // Decode the chunk and add it to the buffer
       const chunk = decoder.decode(value, { stream: true });
-      console.log("Received chunk:", chunk);
       onChunk(chunk);
     }
   } catch (error) {

@@ -58,7 +58,6 @@ export const Project = () => {
         const streamPromise = new Promise<void>((resolve, reject) => {
           let allRequirements = "";
           generateBackendRequirements(projectData.prompt, id, (chunk) => {
-            console.log("Received chunk:", chunk);
             allRequirements += chunk;
             setRequirements(allRequirements);
             // Force a re-render by using setTimeout
@@ -127,7 +126,26 @@ export const Project = () => {
             }
           }
 
-          const fileStructures: FileStructure[] = Object.entries(files).map(
+          // Get code.zip from the code directory
+          const codeZipFile = files["code/code.zip"];
+          if (!codeZipFile) {
+            throw new Error("Code zip not found in project");
+          }
+
+          // Create a new JSZip instance for the code.zip content
+          const codeZip = new JSZip();
+          await codeZip.loadAsync(codeZipFile);
+
+          // Extract files from code.zip
+          const codeFiles: Record<string, string> = {};
+          for (const [filename, file] of Object.entries(codeZip.files)) {
+            if (!file.dir) {
+              const content = await file.async("string");
+              codeFiles[filename] = content;
+            }
+          }
+
+          const fileStructures: FileStructure[] = Object.entries(codeFiles).map(
             ([path, content]) => ({
               type: "file" as const,
               path: `./${path}`,

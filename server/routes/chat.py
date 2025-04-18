@@ -249,15 +249,24 @@ async def project_generator(
                 except Exception as e:
                     logger.warning(f"Could not download existing files from S3: {str(e)}")
 
-            # Create the project structure with all files
-            project_structure = {"structure": []}
+            # Create required directories
+            structure_dir = os.path.join(tmp_dir, "structure")
+            history_dir = os.path.join(tmp_dir, "history")
+            code_dir = os.path.join(tmp_dir, "code")
+            os.makedirs(structure_dir, exist_ok=True)
+            os.makedirs(history_dir, exist_ok=True)
+            os.makedirs(code_dir, exist_ok=True)
 
-            # Add all files from the JSON structure
-            if isinstance(json_content, dict) and "structure" in json_content:
-                for item in json_content["structure"]:
+            # Save the json_content as project.json
+            with open(os.path.join(structure_dir, "project.json"), "w") as f:
+                json.dump(json_content, f, indent=2)
+
+            # Create actual code files in the code directory based on json_content
+            def create_files_from_structure(structure, base_path):
+                for item in structure:
                     if item["type"] == "file":
                         # Create directory structure if needed
-                        file_path = os.path.join(tmp_dir, item["path"])
+                        file_path = os.path.join(base_path, item["path"].replace("./", ""))
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
                         # Write file content
@@ -266,36 +275,48 @@ async def project_generator(
                                 f.write(json.dumps(item["content"], indent=2))
                             else:
                                 f.write(str(item["content"]))
+                    elif item["type"] == "directory" and "content" in item:
+                        # Create directory and process its contents
+                        dir_path = os.path.join(base_path, item["path"].replace("./", ""))
+                        os.makedirs(dir_path, exist_ok=True)
+                        create_files_from_structure(item["content"], base_path)
 
-                        project_structure["structure"].append(
-                            {
-                                "type": "file",
-                                "path": f"./{item['path']}",
-                                "content": (
-                                    json.dumps(item["content"], indent=2)
-                                    if isinstance(item["content"], dict)
-                                    else str(item["content"])
-                                ),
-                            }
-                        )
+            if isinstance(json_content, dict) and "structure" in json_content:
+                create_files_from_structure(json_content["structure"], code_dir)
 
-            # Create ZIP file with only the new files
-            zip_path = f"/tmp/code.zip"
+            # Create ZIP for files in code directory
+            zip_path = os.path.join(code_dir, "code.zip")
             with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-                # Only add files that were created from the JSON structure
-                for item in project_structure["structure"]:
-                    if item["type"] == "file":
-                        file_path = os.path.join(tmp_dir, item["path"].lstrip("./"))
-                        if os.path.exists(file_path):
-                            arcname = item["path"].lstrip("./")
+                for root, dirs, files in os.walk(code_dir):
+                    for file in files:
+                        if file != "code.zip":  # Skip the zip file itself
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(file_path, code_dir)
                             zipf.write(file_path, arcname)
 
-            # Upload ZIP to S3
-            project_url = await upload_zip_to_s3(zip_path, project_folder)
+            # Clean up all files in code directory except the zip
+            for root, dirs, files in os.walk(code_dir):
+                for file in files:
+                    if file != "code.zip":
+                        os.remove(os.path.join(root, file))
+                for dir in dirs:
+                    shutil.rmtree(os.path.join(root, dir))
+
+            # Create a zip of the entire project folder
+            project_zip_path = f"/tmp/{project_folder}.zip"
+            with zipfile.ZipFile(project_zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for root, dirs, files in os.walk(tmp_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        arcname = os.path.relpath(file_path, tmp_dir)
+                        zipf.write(file_path, arcname)
+
+            # Upload the project zip to S3
+            project_url = await upload_zip_to_s3(project_zip_path, project_folder)
 
             # Clean up temporary files
             shutil.rmtree(tmp_dir)
-            os.remove(zip_path)
+            os.remove(project_zip_path)
 
             # Update project with the new URL and folder
             project.s3_presigned_url = project_url
