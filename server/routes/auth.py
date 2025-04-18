@@ -1,11 +1,5 @@
 from config.env_handler import FRONTEND_URL
-from dtos.user import (
-    ForgotPassword,
-    GoogleLogin,
-    UserInput,
-    UserLogin,
-    UserUpdate,
-)
+from dtos.user import ForgotPassword, GoogleLogin, UserInput, UserLogin, UserUpdate
 from fastapi import APIRouter, Depends, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -103,6 +97,7 @@ async def check_session(credentials: HTTPAuthorizationCredentials = Depends(secu
 
 @router.post("/google-login")
 async def google_login(google_login: GoogleLogin):
+    print(f"Google login: {google_login}")
     user, session_token = await AuthRepository.google_login(google_login)
 
     user_dict = jsonable_encoder(user)

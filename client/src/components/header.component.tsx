@@ -31,6 +31,14 @@ export const Header = () => {
           >
             Home
           </a>
+          {isLoggedIn && (
+            <a
+              href="/projects"
+              className="transition-colors text-text-primary hover:text-accent-primary"
+            >
+              Projects
+            </a>
+          )}
         </div>
 
         <div className="flex items-center gap-4">

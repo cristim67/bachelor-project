@@ -213,3 +213,13 @@ export async function generateBackendRequirements(
 
   return "done";
 }
+
+export async function getProjects() {
+  const response = await instance.get("/v1/project/get-all");
+  return response.data;
+}
+
+export async function deleteProject(id: string) {
+  const response = await instance.delete(`/v1/project/delete/${id}`);
+  return response.data;
+}

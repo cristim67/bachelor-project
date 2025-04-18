@@ -5,7 +5,7 @@ import { Home } from "../views/home.view";
 import { Login } from "../views/login.view";
 import { Project } from "../views/project.view";
 import { Register } from "../views/register.view";
-
+import { TableProjects } from "../views/table-projects";
 export const routes = [
   {
     path: "/",
@@ -31,5 +31,10 @@ export const routes = [
   {
     path: "*",
     element: <NotFound />,
+  },
+  {
+    path: "/projects",
+    element: <TableProjects />,
+    layout: AuthLayout,
   },
 ];

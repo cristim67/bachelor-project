@@ -62,3 +62,31 @@ class ProjectRepository:
         except Exception as e:
             logger.error(f"Error finding project: {str(e)}")
             raise HTTPException(status_code=404, detail="Project not found")
+
+    @staticmethod
+    async def get_all_projects(user_id: str):
+        try:
+            projects = await Project.find({"user_id": user_id}).to_list()
+            return projects
+        except Exception as e:
+            logger.error(f"Error getting all projects: {e}")
+            return []
+
+    @staticmethod
+    async def delete_project(id: str, user_id: str):
+        try:
+            if not user_id:
+                raise HTTPException(status_code=401, detail="User ID is required")
+            if not id:
+                raise HTTPException(status_code=401, detail="Project ID is required")
+            object_id = ObjectId(id)
+
+            project = await Project.find_one({"_id": object_id, "user_id": user_id})
+            if not project:
+                raise HTTPException(status_code=404, detail="Project not found")
+
+            await project.delete()
+            return {"message": "Project deleted successfully"}
+        except Exception as e:
+            logger.error(f"Error deleting project: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error")
