@@ -209,6 +209,7 @@ export const Project = () => {
       console.log("Starting initial S3 check for project:", id);
       const s3Response = await checkProjectS3(id);
       console.log("S3 check response:", s3Response);
+      console.log("S3 presigned url:", s3Response.s3_info.s3_presigned_url);
 
       if (s3Response && s3Response.s3_info) {
         // If we get a 200 but no s3_presigned_url, start requirements generation
@@ -323,7 +324,7 @@ export const Project = () => {
 
             // Check if we need to generate project
             const structureFile = files["structure/project.json"];
-            const codeZipFile = projectZip.file("code.zip");
+            const codeZipFile = files["code/code.zip"];
 
             console.log("Checking project files:", {
               hasStructureFile: !!structureFile,
@@ -338,69 +339,274 @@ export const Project = () => {
               if (projectData.prompt) {
                 setIsGeneratingProject(true);
                 await generateProject(projectData.prompt, id);
+                console.log("Project generation completed");
+                setIsGeneratingProject(false);
+
+                // After project generation, check S3 again for the new files
+                console.log("Checking S3 after project generation...");
+                const updatedS3Info = await checkProjectS3(id);
+                console.log("Updated S3 Info:", updatedS3Info);
+
+                if (
+                  updatedS3Info &&
+                  updatedS3Info.s3_info &&
+                  updatedS3Info.s3_info.s3_presigned_url
+                ) {
+                  console.log("Downloading project files...");
+                  const s3Response = await axios.get(
+                    updatedS3Info.s3_info.s3_presigned_url,
+                    {
+                      responseType: "arraybuffer",
+                    },
+                  );
+                  const zip = new JSZip();
+                  await zip.loadAsync(s3Response.data);
+                  const files: Record<string, string> = {};
+
+                  // Get all files from the zip
+                  for (const [filename, file] of Object.entries(zip.files)) {
+                    if (!file.dir) {
+                      const content = await file.async("string");
+                      files[filename] = content;
+                    }
+                  }
+
+                  console.log("Available files in ZIP:", Object.keys(files));
+
+                  // Get code.zip from the code directory
+                  const codeZipFile = files["code/code.zip"];
+                  if (!codeZipFile) {
+                    throw new Error("Code zip not found in project");
+                  }
+
+                  // Create a new JSZip instance for the code.zip content
+                  const codeZip = new JSZip();
+                  // Download the zip file as base64
+                  const zipResponse = await axios.get(
+                    updatedS3Info.s3_info.s3_presigned_url,
+                    {
+                      responseType: "arraybuffer",
+                      transformResponse: [
+                        (data) => {
+                          const base64 = btoa(
+                            new Uint8Array(data).reduce(
+                              (data, byte) => data + String.fromCharCode(byte),
+                              "",
+                            ),
+                          );
+                          return base64;
+                        },
+                      ],
+                    },
+                  );
+                  await codeZip.loadAsync(zipResponse.data, { base64: true });
+
+                  // Get the code.zip file from the code directory
+                  const innerZipFile = codeZip.file("code/code.zip");
+                  if (!innerZipFile) {
+                    throw new Error("Code zip not found in project");
+                  }
+
+                  // Create a new JSZip instance for the code.zip content
+                  const innerCodeZip = new JSZip();
+                  const innerZipContent = await innerZipFile.async(
+                    "arraybuffer",
+                  );
+                  await innerCodeZip.loadAsync(innerZipContent);
+
+                  // Extract files from the inner code.zip
+                  const codeFiles: Record<string, string> = {};
+                  for (const [filename, file] of Object.entries(
+                    innerCodeZip.files,
+                  )) {
+                    if (!file.dir) {
+                      try {
+                        const content = await file.async("string");
+                        codeFiles[filename] = content;
+                      } catch (error) {
+                        console.error(
+                          `Error extracting file ${filename}:`,
+                          error,
+                        );
+                        // Skip this file but continue with others
+                        continue;
+                      }
+                    }
+                  }
+
+                  console.log("Files in code.zip:", Object.keys(codeFiles));
+
+                  if (Object.keys(codeFiles).length === 0) {
+                    throw new Error(
+                      "No files could be extracted from code.zip",
+                    );
+                  }
+
+                  const fileStructures: FileStructure[] = Object.entries(
+                    codeFiles,
+                  ).map(([path, content]) => ({
+                    type: "file" as const,
+                    path: `./${path}`,
+                    content,
+                  }));
+
+                  const newProject: ProjectStructure = {
+                    structure: fileStructures,
+                  };
+
+                  setProject(newProject);
+                  console.log("Project loaded into state");
+
+                  // Show in Stackblitz only after all files are loaded
+                  if (editorRef.current) {
+                    try {
+                      sdk.embedProject(
+                        editorRef.current,
+                        {
+                          files: convertToStackblitzFiles(fileStructures),
+                          title: "Python Project",
+                          description: "Python FastAPI Project Viewer",
+                          template: "node",
+                          settings: {
+                            compile: {
+                              trigger: "auto",
+                            },
+                          },
+                        },
+                        {
+                          height: "100%",
+                          showSidebar: true,
+                          view: "editor",
+                          theme: "dark",
+                          hideNavigation: true,
+                        },
+                      );
+                    } catch (error) {
+                      console.error(
+                        "Failed to embed Stackblitz project:",
+                        error,
+                      );
+                    }
+                  }
+                }
                 return;
               }
             } else {
               console.log("Loading existing project into Stackblitz");
               if (codeZipFile) {
-                const codeZipContent = await codeZipFile.async("arraybuffer");
-                const codeZip = new JSZip();
-                await codeZip.loadAsync(codeZipContent);
+                try {
+                  // Create a new JSZip instance for the code.zip content
+                  const codeZip = new JSZip();
+                  // Download the zip file as base64
+                  const zipResponse = await axios.get(
+                    s3Response.s3_info.s3_presigned_url,
+                    {
+                      responseType: "arraybuffer",
+                      transformResponse: [
+                        (data) => {
+                          const base64 = btoa(
+                            new Uint8Array(data).reduce(
+                              (data, byte) => data + String.fromCharCode(byte),
+                              "",
+                            ),
+                          );
+                          return base64;
+                        },
+                      ],
+                    },
+                  );
+                  await codeZip.loadAsync(zipResponse.data, { base64: true });
 
-                const projectFiles: Record<string, string> = {};
-                for (const [filename, file] of Object.entries(codeZip.files)) {
-                  if (!file.dir) {
-                    const content = await file.async("string");
-                    projectFiles[filename] = content;
+                  // Get the code.zip file from the code directory
+                  const innerZipFile = codeZip.file("code/code.zip");
+                  if (!innerZipFile) {
+                    throw new Error("Code zip not found in project");
                   }
-                }
-                console.log(
-                  "Loaded files from code.zip:",
-                  Object.keys(projectFiles),
-                );
 
-                const fileStructures: FileStructure[] = Object.entries(
-                  projectFiles,
-                ).map(([path, content]) => ({
-                  type: "file" as const,
-                  path: `./${path}`,
-                  content,
-                }));
+                  // Create a new JSZip instance for the code.zip content
+                  const innerCodeZip = new JSZip();
+                  const innerZipContent = await innerZipFile.async(
+                    "arraybuffer",
+                  );
+                  await innerCodeZip.loadAsync(innerZipContent);
 
-                const newProject: ProjectStructure = {
-                  structure: fileStructures,
-                };
+                  // Extract files from the inner code.zip
+                  const codeFiles: Record<string, string> = {};
+                  for (const [filename, file] of Object.entries(
+                    innerCodeZip.files,
+                  )) {
+                    if (!file.dir) {
+                      try {
+                        const content = await file.async("string");
+                        codeFiles[filename] = content;
+                      } catch (error) {
+                        console.error(
+                          `Error extracting file ${filename}:`,
+                          error,
+                        );
+                        // Skip this file but continue with others
+                        continue;
+                      }
+                    }
+                  }
 
-                setProject(newProject);
-                console.log("Project loaded into state");
+                  console.log("Files in code.zip:", Object.keys(codeFiles));
 
-                // Show in Stackblitz only after all files are loaded
-                if (editorRef.current) {
-                  try {
-                    sdk.embedProject(
-                      editorRef.current,
-                      {
-                        files: convertToStackblitzFiles(fileStructures),
-                        title: "Python Project",
-                        description: "Python FastAPI Project Viewer",
-                        template: "node",
-                        settings: {
-                          compile: {
-                            trigger: "auto",
+                  if (Object.keys(codeFiles).length === 0) {
+                    throw new Error(
+                      "No files could be extracted from code.zip",
+                    );
+                  }
+
+                  const fileStructures: FileStructure[] = Object.entries(
+                    codeFiles,
+                  ).map(([path, content]) => ({
+                    type: "file" as const,
+                    path: `./${path}`,
+                    content,
+                  }));
+
+                  const newProject: ProjectStructure = {
+                    structure: fileStructures,
+                  };
+
+                  setProject(newProject);
+                  console.log("Project loaded into state");
+
+                  // Show in Stackblitz only after all files are loaded
+                  if (editorRef.current) {
+                    try {
+                      sdk.embedProject(
+                        editorRef.current,
+                        {
+                          files: convertToStackblitzFiles(fileStructures),
+                          title: "Python Project",
+                          description: "Python FastAPI Project Viewer",
+                          template: "node",
+                          settings: {
+                            compile: {
+                              trigger: "auto",
+                            },
                           },
                         },
-                      },
-                      {
-                        height: "100%",
-                        showSidebar: true,
-                        view: "editor",
-                        theme: "dark",
-                        hideNavigation: true,
-                      },
-                    );
-                  } catch (error) {
-                    console.error("Failed to embed Stackblitz project:", error);
+                        {
+                          height: "100%",
+                          showSidebar: true,
+                          view: "editor",
+                          theme: "dark",
+                          hideNavigation: true,
+                        },
+                      );
+                    } catch (error) {
+                      console.error(
+                        "Failed to embed Stackblitz project:",
+                        error,
+                      );
+                    }
                   }
+                } catch (error) {
+                  console.error("Error processing code.zip:", error);
+                  throw error;
                 }
               }
             }
