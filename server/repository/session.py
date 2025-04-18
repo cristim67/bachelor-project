@@ -11,6 +11,11 @@ class SessionRepository:
         return session
 
     @staticmethod
+    async def get_session_by_token(token: str):
+        session = await ActiveSession.find_one({"session_token": token})
+        return session
+
+    @staticmethod
     async def get_session_by_user_id(user_id: str):
         session = await ActiveSession.find_one({"user_id": user_id})
         return session

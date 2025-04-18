@@ -1,7 +1,7 @@
 export const templates_home = [
   {
-    title: "Blog application",
-    description: "Create a full-stack blog application",
+    title: "Crud Application",
+    description: "Create a CRUD application",
   },
   {
     title: "E-commerce platform",

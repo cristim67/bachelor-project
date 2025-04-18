@@ -116,18 +116,100 @@ export async function getProject(id: string) {
   return response.data;
 }
 
-export async function generateProject(message: string, id: string) {
-  const response = await instance.post("/v1/chat/project-generator", {
-    message: message,
-    history: [],
-    agent: "project_generator",
-    model: "gpt-4o",
-    options: {
-      streaming: true,
-    },
-    project: {
-      projectId: id,
-    },
-  });
+export async function checkProjectS3(id: string) {
+  const response = await instance.get(`/v1/project/check-s3/${id}`);
   return response.data;
+}
+
+export async function generateProject(message: string, id: string) {
+  const token = localStorage.getItem("apiToken");
+  const response = await fetch(`${API_URL}/v1/chat/project-generator`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      message: message,
+      history: [],
+      agent: "project_generator",
+      model: "gpt-4o-mini",
+      options: {
+        streaming: false,
+      },
+      project: {
+        projectId: id,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function generateBackendRequirements(
+  message: string,
+  id: string,
+  onChunk: (chunk: string) => void,
+) {
+  console.log("Starting backend requirements generation...");
+  const token = localStorage.getItem("apiToken");
+  const response = await fetch(`${API_URL}/v1/chat/backend-requirements`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      message: message,
+      history: [],
+      agent: "backend_requirements",
+      model: "gpt-4o-mini",
+      options: {
+        streaming: true,
+      },
+      project: {
+        projectId: id,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("No reader available");
+  }
+
+  const decoder = new TextDecoder();
+  const buffer = "";
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        if (buffer.trim()) {
+          onChunk(buffer);
+        }
+        console.log("Streaming completed");
+        break;
+      }
+
+      const chunk = decoder.decode(value, { stream: true });
+      onChunk(chunk);
+    }
+  } catch (error) {
+    console.error("Error during streaming:", error);
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+
+  return "done";
 }

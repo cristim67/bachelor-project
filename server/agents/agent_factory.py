@@ -25,13 +25,13 @@ class AgentFactory:
         cls._agents[agent_type] = agent_class
 
     @classmethod
-    def get_agent(cls, agent_type: str) -> Agent:
+    def get_agent(cls, agent_type: str, langfuse_session_id: str) -> Agent:
         """Get an instance of the specified agent type"""
         try:
             agent_enum = AgentType(agent_type.lower())
             if agent_enum not in cls._agents:
                 raise ValueError(f"Agent type {agent_type} not registered")
-            return cls._agents[agent_enum]()
+            return cls._agents[agent_enum](langfuse_session_id)
         except ValueError as e:
             raise ValueError(f"Invalid agent type: {agent_type}. Available types: {[t.value for t in AgentType]}")
 

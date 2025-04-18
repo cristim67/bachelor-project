@@ -34,7 +34,8 @@ class ProjectRepository:
         await project.insert()
         return project
 
-    async def get_project(self, id: str, session_token: str):
+    @staticmethod
+    async def get_project(id: str, session_token: str):
         try:
             object_id = ObjectId(id)
             logger.info(f"Searching for project with ID: {object_id}")
@@ -51,8 +52,9 @@ class ProjectRepository:
             if str(session.user_id) != str(project.user_id):
                 raise HTTPException(status_code=403, detail="You don't have access to this project")
 
-            if project.s3_presigned_url:
-                project.s3_presigned_url = self.s3_service.get_file_url(f"{project.s3_folder_name}/project.zip")
+            s3_service = S3Service()
+            if project.s3_folder_name:
+                project.s3_presigned_url = s3_service.get_file_url(f"{project.s3_folder_name}/project.zip")
                 await project.save()
 
             logger.info(f"Project: {project}")

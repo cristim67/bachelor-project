@@ -4,6 +4,7 @@ from agents.agent import Agent
 from agents.agent_factory import AgentType
 from config.logger import logger
 from dtos.agent import AgentOptions
+from langfuse.decorators import observe
 
 system_prompt: str = """
 You are a requirements analysis agent that creates structured descriptions for an Express.js backend code generation agent. Your ONLY job is to analyze the user's requirements and create a clear, structured description.
@@ -86,10 +87,12 @@ class BackendRequirementsAgent(Agent):
     def name(self) -> str:
         return AgentType.BACKEND_REQUIREMENTS
 
-    def __init__(self):
+    def __init__(self, langfuse_session_id: str):
+        super().__init__(langfuse_session_id)
         self.system_prompt = system_prompt
         self.agent_prompt = wrapping_prompt
 
+    @observe(name="backend_requirements_builder_chat")
     def chat(
         self,
         message: str,
