@@ -32,8 +32,13 @@ Rules:
    - ALWAYS use ESM import/export syntax
    - Use .mjs extension in all import statements
    - NO require() or module.exports
-   - NO placeholder code or comments
-   - All code must be fully implemented
+   - ABSOLUTELY NO COMMENTS OR PLACEHOLDERS
+   - All code must be fully implemented and working
+   - Every function must have a complete implementation
+   - Every middleware must have a complete implementation
+   - Every route handler must have a complete implementation
+   - Every service must have a complete implementation
+   - Every model must have a complete implementation
 
 3. Project structure:
    - Separate routes, models, services, and middleware
@@ -41,18 +46,26 @@ Rules:
    - Include proper validation
    - Include proper HTTP status codes
    - All JavaScript files must end in .mjs
+
 4. Implementation:
    - Complete CRUD operations where needed
    - Proper error handling with try/catch
    - Modern JavaScript features
    - Proper environment variable usage
    - Clean and efficient code
+   - NO TODO comments
+   - NO placeholder implementations
+   - NO "implementation needed" comments
+   - NO empty function bodies
+   - NO skeleton code
 
 IMPORTANT: 
 - Use .mjs extension for all JavaScript files
 - Use ESM syntax exclusively
 - Generate complete, working code
 - Follow Express.js best practices
+- NEVER include comments or placeholders
+- EVERY piece of code must be fully implemented
 """
 
 wrapping_prompt: str = """<<USER_PROMPT>>"""

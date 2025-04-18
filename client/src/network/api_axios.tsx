@@ -133,7 +133,7 @@ export async function generateProject(message: string, id: string) {
       message: message,
       history: [],
       agent: "project_generator",
-      model: "gpt-4",
+      model: "gpt-4o-mini",
       options: {
         streaming: false,
       },
@@ -167,7 +167,7 @@ export async function generateBackendRequirements(
       message: message,
       history: [],
       agent: "backend_requirements",
-      model: "gpt-4",
+      model: "gpt-4o-mini",
       options: {
         streaming: true,
       },
@@ -194,7 +194,6 @@ export async function generateBackendRequirements(
       const { done, value } = await reader.read();
 
       if (done) {
-        // Process any remaining data in the buffer
         if (buffer.trim()) {
           onChunk(buffer);
         }
@@ -202,7 +201,6 @@ export async function generateBackendRequirements(
         break;
       }
 
-      // Decode the chunk and add it to the buffer
       const chunk = decoder.decode(value, { stream: true });
       onChunk(chunk);
     }

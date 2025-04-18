@@ -36,6 +36,7 @@ export const Project = () => {
   const [isGeneratingRequirements, setIsGeneratingRequirements] =
     useState(false);
   const [isGeneratingProject, setIsGeneratingProject] = useState(false);
+  const [userInput, setUserInput] = useState<string>("");
   const requirementsRef = useRef<HTMLPreElement>(null);
 
   useEffect(() => {
@@ -53,14 +54,13 @@ export const Project = () => {
       setRequirements("");
       try {
         console.log("Starting requirements generation...");
-        // First step: Generate backend requirements with streaming
+
         let finalRequirements = "";
         const streamPromise = new Promise<void>((resolve, reject) => {
           let allRequirements = "";
           generateBackendRequirements(projectData.prompt, id, (chunk) => {
             allRequirements += chunk;
             setRequirements(allRequirements);
-            // Force a re-render by using setTimeout
             requestAnimationFrame(() => {
               if (requirementsRef.current) {
                 requirementsRef.current.scrollTop =
@@ -79,22 +79,19 @@ export const Project = () => {
             });
         });
 
-        // Wait for the stream to complete
         await streamPromise;
         console.log("Requirements generation completed");
 
-        // Second step: Generate project with the requirements
         setIsGeneratingRequirements(false);
         setIsGeneratingProject(true);
 
         console.log("Starting project generation...");
-        // Only generate project if we have valid requirements
         if (finalRequirements && finalRequirements.trim()) {
           await generateProject(finalRequirements, id);
           console.log("Project generation completed");
-          setIsGeneratingProject(false); // Set this to false after generation
+          setIsGeneratingProject(false);
 
-          // After project generation, check S3 again for the new files
+          await new Promise((resolve) => setTimeout(resolve, 2000));
           console.log("Checking S3 after project generation...");
           const updatedS3Info = await checkProjectS3(id);
           console.log("Updated S3 Info:", updatedS3Info);
@@ -111,6 +108,8 @@ export const Project = () => {
                 responseType: "arraybuffer",
               },
             );
+
+            // Create a new JSZip instance and load the response data
             const zip = new JSZip();
             await zip.loadAsync(s3Response.data);
             const files: Record<string, string> = {};
@@ -212,7 +211,6 @@ export const Project = () => {
       console.log("S3 presigned url:", s3Response.s3_info.s3_presigned_url);
 
       if (s3Response && s3Response.s3_info) {
-        // If we get a 200 but no s3_presigned_url, start requirements generation
         if (!s3Response.s3_info.s3_presigned_url) {
           console.log(
             "No project files found, starting requirements generation",
@@ -239,7 +237,6 @@ export const Project = () => {
             await projectZip.loadAsync(projectResponse.data);
             console.log("Project ZIP loaded, checking contents...");
 
-            // Get all files from the zip
             const files: Record<string, string> = {};
             for (const [filename, file] of Object.entries(projectZip.files)) {
               if (!file.dir) {
@@ -249,14 +246,12 @@ export const Project = () => {
             }
             console.log("Available files in ZIP:", Object.keys(files));
 
-            // Check conversation.jsonl first
             const requirementsFile = files["history/conversation.jsonl"];
             if (requirementsFile) {
               console.log("Found conversation.jsonl, checking messages...");
               const requirementsContent = requirementsFile;
               const requirementsLines = requirementsContent.split("\n");
 
-              // Check if we need to generate requirements
               if (requirementsLines.length > 0) {
                 const firstMessage = JSON.parse(requirementsLines[0]);
                 console.log("First message:", firstMessage);
@@ -271,7 +266,6 @@ export const Project = () => {
                   projectData.prompt = firstMessage.content;
                   localStorage.setItem("project", JSON.stringify(projectData));
 
-                  // Check if we need to generate requirements
                   const lastMessage = JSON.parse(
                     requirementsLines[requirementsLines.length - 1],
                   );
@@ -294,7 +288,6 @@ export const Project = () => {
                 }
               }
 
-              // Display existing conversation
               const allMessages = requirementsLines
                 .filter((line) => line.trim())
                 .map((line) => {
@@ -322,7 +315,6 @@ export const Project = () => {
               console.log("No conversation.jsonl found in project");
             }
 
-            // Check if we need to generate project
             const structureFile = files["structure/project.json"];
             const codeZipFile = files["code/code.zip"];
 
@@ -342,7 +334,7 @@ export const Project = () => {
                 console.log("Project generation completed");
                 setIsGeneratingProject(false);
 
-                // After project generation, check S3 again for the new files
+                await new Promise((resolve) => setTimeout(resolve, 2000));
                 console.log("Checking S3 after project generation...");
                 const updatedS3Info = await checkProjectS3(id);
                 console.log("Updated S3 Info:", updatedS3Info);
@@ -363,7 +355,6 @@ export const Project = () => {
                   await zip.loadAsync(s3Response.data);
                   const files: Record<string, string> = {};
 
-                  // Get all files from the zip
                   for (const [filename, file] of Object.entries(zip.files)) {
                     if (!file.dir) {
                       const content = await file.async("string");
@@ -373,15 +364,12 @@ export const Project = () => {
 
                   console.log("Available files in ZIP:", Object.keys(files));
 
-                  // Get code.zip from the code directory
                   const codeZipFile = files["code/code.zip"];
                   if (!codeZipFile) {
                     throw new Error("Code zip not found in project");
                   }
 
-                  // Create a new JSZip instance for the code.zip content
                   const codeZip = new JSZip();
-                  // Download the zip file directly
                   const zipResponse = await axios.get(
                     updatedS3Info.s3_info.s3_presigned_url,
                     {
@@ -390,20 +378,17 @@ export const Project = () => {
                   );
                   await codeZip.loadAsync(zipResponse.data);
 
-                  // Get the code.zip file from the code directory
                   const innerZipFile = codeZip.file("code/code.zip");
                   if (!innerZipFile) {
                     throw new Error("Code zip not found in project");
                   }
 
-                  // Create a new JSZip instance for the code.zip content
                   const innerCodeZip = new JSZip();
                   const innerZipContent = await innerZipFile.async(
                     "arraybuffer",
                   );
                   await innerCodeZip.loadAsync(innerZipContent);
 
-                  // Extract files from the inner code.zip
                   const codeFiles: Record<string, string> = {};
                   for (const [filename, file] of Object.entries(
                     innerCodeZip.files,
@@ -411,16 +396,13 @@ export const Project = () => {
                     if (!file.dir) {
                       try {
                         const content = await file.async("string");
-                        // Remove any leading ./ or / from the path
                         const cleanPath = filename.replace(/^\.?\//, "");
                         codeFiles[cleanPath] = content;
-                        console.log(`Loaded file: ${cleanPath}`);
                       } catch (error) {
                         console.error(
                           `Error extracting file ${filename}:`,
                           error,
                         );
-                        // Skip this file but continue with others
                         continue;
                       }
                     }
@@ -449,10 +431,8 @@ export const Project = () => {
                   setProject(newProject);
                   console.log("Project loaded into state");
 
-                  // Show in Stackblitz only after all files are loaded
                   if (editorRef.current) {
                     try {
-                      // Convert files to Stackblitz format
                       const stackblitzFiles =
                         convertToStackblitzFiles(fileStructures);
                       console.log(
@@ -495,9 +475,7 @@ export const Project = () => {
               console.log("Loading existing project into Stackblitz");
               if (codeZipFile) {
                 try {
-                  // Create a new JSZip instance for the code.zip content
                   const codeZip = new JSZip();
-                  // Download the zip file directly
                   const zipResponse = await axios.get(
                     s3Response.s3_info.s3_presigned_url,
                     {
@@ -506,20 +484,17 @@ export const Project = () => {
                   );
                   await codeZip.loadAsync(zipResponse.data);
 
-                  // Get the code.zip file from the code directory
                   const innerZipFile = codeZip.file("code/code.zip");
                   if (!innerZipFile) {
                     throw new Error("Code zip not found in project");
                   }
 
-                  // Create a new JSZip instance for the code.zip content
                   const innerCodeZip = new JSZip();
                   const innerZipContent = await innerZipFile.async(
                     "arraybuffer",
                   );
                   await innerCodeZip.loadAsync(innerZipContent);
 
-                  // Extract files from the inner code.zip
                   const codeFiles: Record<string, string> = {};
                   for (const [filename, file] of Object.entries(
                     innerCodeZip.files,
@@ -527,16 +502,13 @@ export const Project = () => {
                     if (!file.dir) {
                       try {
                         const content = await file.async("string");
-                        // Remove any leading ./ or / from the path
                         const cleanPath = filename.replace(/^\.?\//, "");
                         codeFiles[cleanPath] = content;
-                        console.log(`Loaded file: ${cleanPath}`);
                       } catch (error) {
                         console.error(
                           `Error extracting file ${filename}:`,
                           error,
                         );
-                        // Skip this file but continue with others
                         continue;
                       }
                     }
@@ -565,10 +537,8 @@ export const Project = () => {
                   setProject(newProject);
                   console.log("Project loaded into state");
 
-                  // Show in Stackblitz only after all files are loaded
                   if (editorRef.current) {
                     try {
-                      // Convert files to Stackblitz format
                       const stackblitzFiles =
                         convertToStackblitzFiles(fileStructures);
                       console.log(
@@ -667,10 +637,8 @@ export const Project = () => {
     const files: Record<string, string> = {};
     structure.forEach((item) => {
       if (item.type === "file") {
-        // Remove any leading ./ or / from the path
         const cleanPath = item.path.replace(/^\.?\//, "");
         files[cleanPath] = item.content || "";
-        console.log(`Converting file to Stackblitz: ${cleanPath}`);
       }
     });
     return files;
@@ -706,65 +674,22 @@ export const Project = () => {
     }
   }, [project]);
 
+  const handleSendMessage = () => {
+    console.log("User message:", userInput);
+    setUserInput("");
+  };
+
   return (
     <div className="flex min-h-screen pt-16">
       <div className="w-1/2 p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="p-4 rounded-lg shadow">
-            <p>Project ID: {id}</p>
-          </div>
-          <button
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className={`px-4 py-2 transition-colors rounded-md flex items-center gap-2 text-sm
-              ${
-                theme === "light"
-                  ? "border-black border-[1px] bg-button-color text-text-color hover:bg-button-hover-color"
-                  : "border-white border-[1px] bg-button-color text-text-color hover:bg-button-hover-color"
-              }`}
-          >
-            {isDownloading ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                <span>Downloading...</span>
-              </>
-            ) : (
-              <>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  />
-                </svg>
-                <span>Download ZIP</span>
-              </>
-            )}
-          </button>
-        </div>
         {isGeneratingRequirements && (
-          <div className="p-4 rounded-lg shadow mb-4">
+          <div
+            className={`p-4 rounded-lg shadow mb-4 ${
+              theme === "light"
+                ? "bg-white border border-black"
+                : "bg-gray-800 border border-button-color"
+            }`}
+          >
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
                 <circle
@@ -782,29 +707,151 @@ export const Project = () => {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              <span>Generating requirements...</span>
+              <span
+                className={theme === "light" ? "text-black" : "text-gray-100"}
+              >
+                Generating requirements...
+              </span>
             </div>
             <pre
               ref={requirementsRef}
-              className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded overflow-auto max-h-96 text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words text-sm"
+              className={`mt-4 p-4 rounded overflow-auto max-h-[500px] whitespace-pre-wrap break-words text-sm ${
+                theme === "light"
+                  ? "bg-white text-black border border-black"
+                  : "bg-gray-700 text-gray-100 border border-button-color"
+              }`}
             >
               {requirements}
             </pre>
           </div>
         )}
         {!isGeneratingRequirements && requirements && (
-          <div className="p-4 rounded-lg shadow mb-4">
-            <div className="flex items-center gap-2">
-              <span>Backend Requirements</span>
+          <div
+            className={`p-4 rounded-lg shadow mb-4 ${
+              theme === "light"
+                ? "bg-white border border-black"
+                : "bg-gray-800 border border-button-color"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span
+                className={theme === "light" ? "text-black" : "text-gray-100"}
+              >
+                Backend Requirements
+              </span>
+              <button
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className={`px-4 py-2 transition-colors rounded-md flex items-center gap-2 text-sm
+                  ${
+                    theme === "light"
+                      ? "border-black border-[1px] bg-white text-black hover:bg-gray-100"
+                      : "border-button-color border-[1px] bg-button-color text-text-color hover:bg-button-hover-color"
+                  }`}
+              >
+                {isDownloading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    <span>Downloading...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                    <span>Download ZIP</span>
+                  </>
+                )}
+              </button>
             </div>
             <pre
               ref={requirementsRef}
-              className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded overflow-auto max-h-96 text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words text-sm"
+              className={`p-4 rounded overflow-auto max-h-[500px] whitespace-pre-wrap break-words text-sm ${
+                theme === "light"
+                  ? "bg-white text-black border border-black"
+                  : "bg-gray-700 text-gray-100 border border-button-color"
+              }`}
             >
               {requirements}
             </pre>
           </div>
         )}
+        <div
+          className={`rounded-2xl shadow-lg ${
+            theme === "light"
+              ? "bg-white border border-black"
+              : "bg-[#2f3136] border border-[#1e1f22]"
+          }`}
+        >
+          <div className="flex flex-row gap-2 p-2 items-center">
+            <textarea
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder="Type your message here..."
+              className={`w-full px-4 py-3 rounded-xl focus:outline-none resize-none ${
+                theme === "light"
+                  ? "bg-white text-black placeholder-gray-500 border border-black"
+                  : "bg-[#383a40] text-gray-200 placeholder-gray-400 border-none"
+              }`}
+              rows={1}
+              onKeyPress={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+            />
+            <button
+              onClick={handleSendMessage}
+              className={`px-6 rounded-xl flex items-center gap-2 text-base font-medium h-[42px]
+                ${
+                  theme === "light"
+                    ? "bg-white text-black hover:bg-gray-100 border border-black"
+                    : "bg-[#383a40] text-gray-200 hover:bg-[#404249] border-none"
+                }`}
+            >
+              <span>Send</span>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
       <div
         ref={editorRef}

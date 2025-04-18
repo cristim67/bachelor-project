@@ -114,10 +114,9 @@ async def backend_requirements(
             message=request_data.message,
             history=request_data.history,
             model=request_data.model,
-            options=AgentOptions(streaming=True),
+            options=request_data.options,
             project=request_data.project,
             bearer_token=credentials.credentials,
-            json_mode=False,
         )
 
         # Shared buffer to collect content
@@ -201,9 +200,9 @@ async def project_generator(
         generator_agent = AgentFactory.get_agent(AgentType.PROJECT_GENERATOR, langfuse_session_id)
         project_structure = await generator_agent.chat(
             message=request_data.message,
-            history=[],
-            model="gpt-3.5-turbo",
-            options=AgentOptions(streaming=False),
+            history=request_data.history,
+            model=request_data.model,
+            options=request_data.options,
             project=request_data.project,
             bearer_token=credentials.credentials,
             json_mode=True,
@@ -235,6 +234,9 @@ async def project_generator(
             )
 
         try:
+            logger.debug(f"Project generator response: {json_content}")
+            logger.info(f"Project generator response: {json_content}")
+
             project_folder = request_data.project.projectId
             # Create temporary directory for project files
             tmp_dir = f"/tmp/{project_folder}"
