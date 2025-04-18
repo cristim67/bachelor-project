@@ -381,25 +381,14 @@ export const Project = () => {
 
                   // Create a new JSZip instance for the code.zip content
                   const codeZip = new JSZip();
-                  // Download the zip file as base64
+                  // Download the zip file directly
                   const zipResponse = await axios.get(
                     updatedS3Info.s3_info.s3_presigned_url,
                     {
                       responseType: "arraybuffer",
-                      transformResponse: [
-                        (data) => {
-                          const base64 = btoa(
-                            new Uint8Array(data).reduce(
-                              (data, byte) => data + String.fromCharCode(byte),
-                              "",
-                            ),
-                          );
-                          return base64;
-                        },
-                      ],
                     },
                   );
-                  await codeZip.loadAsync(zipResponse.data, { base64: true });
+                  await codeZip.loadAsync(zipResponse.data);
 
                   // Get the code.zip file from the code directory
                   const innerZipFile = codeZip.file("code/code.zip");
@@ -422,7 +411,10 @@ export const Project = () => {
                     if (!file.dir) {
                       try {
                         const content = await file.async("string");
-                        codeFiles[filename] = content;
+                        // Remove any leading ./ or / from the path
+                        const cleanPath = filename.replace(/^\.?\//, "");
+                        codeFiles[cleanPath] = content;
+                        console.log(`Loaded file: ${cleanPath}`);
                       } catch (error) {
                         console.error(
                           `Error extracting file ${filename}:`,
@@ -434,7 +426,7 @@ export const Project = () => {
                     }
                   }
 
-                  console.log("Files in code.zip:", Object.keys(codeFiles));
+                  console.log("All files in code.zip:", Object.keys(codeFiles));
 
                   if (Object.keys(codeFiles).length === 0) {
                     throw new Error(
@@ -460,10 +452,18 @@ export const Project = () => {
                   // Show in Stackblitz only after all files are loaded
                   if (editorRef.current) {
                     try {
+                      // Convert files to Stackblitz format
+                      const stackblitzFiles =
+                        convertToStackblitzFiles(fileStructures);
+                      console.log(
+                        "Stackblitz files:",
+                        Object.keys(stackblitzFiles),
+                      );
+
                       sdk.embedProject(
                         editorRef.current,
                         {
-                          files: convertToStackblitzFiles(fileStructures),
+                          files: stackblitzFiles,
                           title: "Python Project",
                           description: "Python FastAPI Project Viewer",
                           template: "node",
@@ -497,25 +497,14 @@ export const Project = () => {
                 try {
                   // Create a new JSZip instance for the code.zip content
                   const codeZip = new JSZip();
-                  // Download the zip file as base64
+                  // Download the zip file directly
                   const zipResponse = await axios.get(
                     s3Response.s3_info.s3_presigned_url,
                     {
                       responseType: "arraybuffer",
-                      transformResponse: [
-                        (data) => {
-                          const base64 = btoa(
-                            new Uint8Array(data).reduce(
-                              (data, byte) => data + String.fromCharCode(byte),
-                              "",
-                            ),
-                          );
-                          return base64;
-                        },
-                      ],
                     },
                   );
-                  await codeZip.loadAsync(zipResponse.data, { base64: true });
+                  await codeZip.loadAsync(zipResponse.data);
 
                   // Get the code.zip file from the code directory
                   const innerZipFile = codeZip.file("code/code.zip");
@@ -538,7 +527,10 @@ export const Project = () => {
                     if (!file.dir) {
                       try {
                         const content = await file.async("string");
-                        codeFiles[filename] = content;
+                        // Remove any leading ./ or / from the path
+                        const cleanPath = filename.replace(/^\.?\//, "");
+                        codeFiles[cleanPath] = content;
+                        console.log(`Loaded file: ${cleanPath}`);
                       } catch (error) {
                         console.error(
                           `Error extracting file ${filename}:`,
@@ -550,7 +542,7 @@ export const Project = () => {
                     }
                   }
 
-                  console.log("Files in code.zip:", Object.keys(codeFiles));
+                  console.log("All files in code.zip:", Object.keys(codeFiles));
 
                   if (Object.keys(codeFiles).length === 0) {
                     throw new Error(
@@ -576,10 +568,18 @@ export const Project = () => {
                   // Show in Stackblitz only after all files are loaded
                   if (editorRef.current) {
                     try {
+                      // Convert files to Stackblitz format
+                      const stackblitzFiles =
+                        convertToStackblitzFiles(fileStructures);
+                      console.log(
+                        "Stackblitz files:",
+                        Object.keys(stackblitzFiles),
+                      );
+
                       sdk.embedProject(
                         editorRef.current,
                         {
-                          files: convertToStackblitzFiles(fileStructures),
+                          files: stackblitzFiles,
                           title: "Python Project",
                           description: "Python FastAPI Project Viewer",
                           template: "node",
@@ -667,7 +667,10 @@ export const Project = () => {
     const files: Record<string, string> = {};
     structure.forEach((item) => {
       if (item.type === "file") {
-        files[item.path.replace("./", "")] = item.content || "";
+        // Remove any leading ./ or / from the path
+        const cleanPath = item.path.replace(/^\.?\//, "");
+        files[cleanPath] = item.content || "";
+        console.log(`Converting file to Stackblitz: ${cleanPath}`);
       }
     });
     return files;
