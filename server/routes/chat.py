@@ -275,11 +275,12 @@ async def project_generator(
                                 f.write(json.dumps(item["content"], indent=2))
                             else:
                                 f.write(str(item["content"]))
-                    elif item["type"] == "directory" and "content" in item:
-                        # Create directory and process its contents
+                    elif item["type"] == "directory":
+                        # Create directory and process its contents if they exist
                         dir_path = os.path.join(base_path, item["path"].replace("./", ""))
                         os.makedirs(dir_path, exist_ok=True)
-                        create_files_from_structure(item["content"], base_path)
+                        if isinstance(item.get("content"), list):
+                            create_files_from_structure(item["content"], base_path)
 
             if isinstance(json_content, dict) and "structure" in json_content:
                 create_files_from_structure(json_content["structure"], code_dir)
