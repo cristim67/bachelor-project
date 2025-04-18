@@ -92,102 +92,107 @@ export const Project = () => {
         if (finalRequirements && finalRequirements.trim()) {
           await generateProject(finalRequirements, id);
           console.log("Project generation completed");
-        } else {
-          console.error("No valid requirements generated");
-          throw new Error("No valid requirements generated");
-        }
+          setIsGeneratingProject(false); // Set this to false after generation
 
-        // After project generation, check S3 again for the new files
-        console.log("Checking S3 after project generation...");
-        const updatedS3Info = await checkProjectS3(id);
-        console.log("Updated S3 Info:", updatedS3Info);
+          // After project generation, check S3 again for the new files
+          console.log("Checking S3 after project generation...");
+          const updatedS3Info = await checkProjectS3(id);
+          console.log("Updated S3 Info:", updatedS3Info);
 
-        if (
-          updatedS3Info &&
-          updatedS3Info.s3_info &&
-          updatedS3Info.s3_info.s3_presigned_url
-        ) {
-          console.log("Downloading project files...");
-          const s3Response = await axios.get(
-            updatedS3Info.s3_info.s3_presigned_url,
-            {
-              responseType: "arraybuffer",
-            },
-          );
-          const zip = new JSZip();
-          await zip.loadAsync(s3Response.data);
-          const files: Record<string, string> = {};
+          if (
+            updatedS3Info &&
+            updatedS3Info.s3_info &&
+            updatedS3Info.s3_info.s3_presigned_url
+          ) {
+            console.log("Downloading project files...");
+            const s3Response = await axios.get(
+              updatedS3Info.s3_info.s3_presigned_url,
+              {
+                responseType: "arraybuffer",
+              },
+            );
+            const zip = new JSZip();
+            await zip.loadAsync(s3Response.data);
+            const files: Record<string, string> = {};
 
-          // Get all files from the zip
-          for (const [filename, file] of Object.entries(zip.files)) {
-            if (!file.dir) {
-              const content = await file.async("string");
-              files[filename] = content;
+            // Get all files from the zip
+            for (const [filename, file] of Object.entries(zip.files)) {
+              if (!file.dir) {
+                const content = await file.async("string");
+                files[filename] = content;
+              }
             }
-          }
 
-          // Get code.zip from the code directory
-          const codeZipFile = files["code/code.zip"];
-          if (!codeZipFile) {
-            throw new Error("Code zip not found in project");
-          }
+            console.log("Available files in ZIP:", Object.keys(files));
 
-          // Create a new JSZip instance for the code.zip content
-          const codeZip = new JSZip();
-          await codeZip.loadAsync(codeZipFile);
-
-          // Extract files from code.zip
-          const codeFiles: Record<string, string> = {};
-          for (const [filename, file] of Object.entries(codeZip.files)) {
-            if (!file.dir) {
-              const content = await file.async("string");
-              codeFiles[filename] = content;
+            // Get code.zip from the code directory
+            const codeZipFile = files["code/code.zip"];
+            if (!codeZipFile) {
+              throw new Error("Code zip not found in project");
             }
-          }
 
-          const fileStructures: FileStructure[] = Object.entries(codeFiles).map(
-            ([path, content]) => ({
+            // Create a new JSZip instance for the code.zip content
+            const codeZip = new JSZip();
+            await codeZip.loadAsync(codeZipFile);
+
+            // Extract files from code.zip
+            const codeFiles: Record<string, string> = {};
+            for (const [filename, file] of Object.entries(codeZip.files)) {
+              if (!file.dir) {
+                const content = await file.async("string");
+                codeFiles[filename] = content;
+              }
+            }
+
+            console.log("Files in code.zip:", Object.keys(codeFiles));
+
+            const fileStructures: FileStructure[] = Object.entries(
+              codeFiles,
+            ).map(([path, content]) => ({
               type: "file" as const,
               path: `./${path}`,
               content,
-            }),
-          );
+            }));
 
-          const newProject: ProjectStructure = {
-            structure: fileStructures,
-          };
+            const newProject: ProjectStructure = {
+              structure: fileStructures,
+            };
 
-          setProject(newProject);
-          console.log("Project loaded into state");
+            setProject(newProject);
+            console.log("Project loaded into state");
 
-          // Show in Stackblitz only after all files are loaded
-          if (editorRef.current) {
-            try {
-              sdk.embedProject(
-                editorRef.current,
-                {
-                  files: convertToStackblitzFiles(fileStructures),
-                  title: "Python Project",
-                  description: "Python FastAPI Project Viewer",
-                  template: "node",
-                  settings: {
-                    compile: {
-                      trigger: "auto",
+            // Show in Stackblitz only after all files are loaded
+            if (editorRef.current) {
+              try {
+                sdk.embedProject(
+                  editorRef.current,
+                  {
+                    files: convertToStackblitzFiles(fileStructures),
+                    title: "Python Project",
+                    description: "Python FastAPI Project Viewer",
+                    template: "node",
+                    settings: {
+                      compile: {
+                        trigger: "auto",
+                      },
                     },
                   },
-                },
-                {
-                  height: "100%",
-                  showSidebar: true,
-                  view: "editor",
-                  theme: "dark",
-                  hideNavigation: true,
-                },
-              );
-            } catch (error) {
-              console.error("Failed to embed Stackblitz project:", error);
+                  {
+                    height: "100%",
+                    showSidebar: true,
+                    view: "editor",
+                    theme: "dark",
+                    hideNavigation: true,
+                  },
+                );
+              } catch (error) {
+                console.error("Failed to embed Stackblitz project:", error);
+              }
             }
           }
+        } else {
+          console.error("No valid requirements generated");
+          throw new Error("No valid requirements generated");
         }
       } catch (error) {
         console.error("Error generating project:", error);
@@ -325,7 +330,7 @@ export const Project = () => {
               hasCodeZip: !!codeZipFile,
             });
 
-            if (!structureFile || !codeZipFile) {
+            if (!structureFile) {
               console.log("Missing project files, starting project generation");
               const projectData = JSON.parse(
                 localStorage.getItem("project") || "{}",
