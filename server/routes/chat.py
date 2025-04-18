@@ -127,13 +127,11 @@ async def backend_requirements(
         async def stream_and_collect():
             try:
                 async for chunk in requirements_response.body_iterator:
-                    logger.info(f"Streaming chunk: {chunk}")
                     content_buffer.append(chunk)
                     yield chunk
             finally:
                 # Ensure we have all the content before proceeding
                 requirements_content = "".join(content_buffer)
-                logger.info(f"Final content: {requirements_content}")
 
                 # Format messages as JSONL
                 messages = [
@@ -292,12 +290,12 @@ async def project_generator(
                             arcname = item["path"].lstrip("./")
                             zipf.write(file_path, arcname)
 
+            # Upload ZIP to S3
+            project_url = await upload_zip_to_s3(zip_path, project_folder)
+
             # Clean up temporary files
             shutil.rmtree(tmp_dir)
             os.remove(zip_path)
-
-            # Upload ZIP to S3
-            project_url = await upload_zip_to_s3(zip_path, project_folder)
 
             # Update project with the new URL and folder
             project.s3_presigned_url = project_url
