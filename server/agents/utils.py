@@ -3,7 +3,13 @@ from enum import Enum
 
 import openai
 from anthropic import Anthropic, AsyncAnthropic
-from config.env_handler import ANTHROPIC_API_KEY, OPENAI_API_KEY
+from config.env_handler import (
+    ANTHROPIC_API_KEY,
+    LANGFUSE_PUBLIC_KEY,
+    LANGFUSE_SECRET_KEY,
+    OPENAI_API_KEY,
+)
+from langfuse import Langfuse
 
 
 class LLMProvider(str, Enum):
@@ -25,6 +31,10 @@ class LLMClient:
         self.anthropic_async = AsyncAnthropic(
             api_key=ANTHROPIC_API_KEY,
         )
+        self.langfuse_client = Langfuse(
+            public_key=LANGFUSE_PUBLIC_KEY,
+            secret_key=LANGFUSE_SECRET_KEY,
+        )
 
     def get_client(self, provider: LLMProvider, streaming: bool = False):
         clients = {
@@ -36,7 +46,7 @@ class LLMClient:
 
 class ModelConfig:
     DEFAULT_MODELS = {
-        LLMProvider.OPENAI: "gpt-4o",
+        LLMProvider.OPENAI: "gpt-4o-mini",
         LLMProvider.ANTHROPIC: "claude-3-opus-latest",
     }
 

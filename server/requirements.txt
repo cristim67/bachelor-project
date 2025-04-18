@@ -22,3 +22,4 @@ isort
 pre-commit
 loguru
 email-validator
+langfuse

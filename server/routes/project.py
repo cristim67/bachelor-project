@@ -27,3 +27,19 @@ async def get_project(id: str, credentials: HTTPAuthorizationCredentials = Depen
     session_token = credentials.credentials
     project = await ProjectRepository().get_project(id, session_token)
     return {"code": 200, "project": project}
+
+
+@router.get("/check-s3/{id}")
+async def check_project_s3(id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    session_token = credentials.credentials
+    project = await ProjectRepository.get_project(id, session_token)
+
+    if not project:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"code": status.HTTP_404_NOT_FOUND, "message": "Project not found"},
+        )
+
+    s3_info = {"s3_folder_name": project.s3_folder_name, "s3_presigned_url": project.s3_presigned_url}
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"code": status.HTTP_200_OK, "s3_info": s3_info})

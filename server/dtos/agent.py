@@ -20,6 +20,7 @@ class ChatRequest(BaseModel):
     message: str
     history: Optional[List[ChatMessage]] = Field(None, description="List of previous messages in the conversation")
     agent: str = Field("backend_requirements", description="Agent to use for the chat")
-    model: str = Field("gpt-4o", description="LLM model to use for the agent")
+    model: str = Field("gpt-4o-mini", description="LLM model to use for the agent")
     options: Optional[AgentOptions] = Field(None, description="Optional agent options")
     project: Optional[ProjectInfo] = Field(None, description="Optional project information")
+    langfuse_session_id: Optional[str] = Field(None, description="Langfuse session ID")

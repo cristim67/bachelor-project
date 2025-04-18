@@ -4,6 +4,7 @@ from agents.agent import Agent
 from agents.agent_factory import AgentType
 from config.logger import logger
 from dtos.agent import AgentOptions
+from langfuse.decorators import observe
 
 system_prompt: str = """You are a project generator assistant for Express.js backend projects using ESM (ECMAScript Modules).
 
@@ -62,19 +63,21 @@ class ProjectGeneratorAgent(Agent):
     def name(self) -> str:
         return AgentType.PROJECT_GENERATOR
 
-    def __init__(self):
+    def __init__(self, langfuse_session_id: str):
+        super().__init__(langfuse_session_id)
         self.system_prompt = system_prompt
         self.agent_prompt = wrapping_prompt
 
+    @observe(name="project_generator_chat")
     def chat(
         self,
         message: str,
         history: List[Tuple[str, str]],
         model: str = None,
         options: AgentOptions = None,
+        json_mode: bool = True,
         **kwargs: Any,
     ) -> str:
         prompt = self.agent_prompt.replace("<<USER_PROMPT>>", message)
 
-        logger.info(prompt)
-        return self.ask(self.system_prompt, prompt, model, options.streaming)
+        return self.ask(self.system_prompt, prompt, model, options.streaming, json_mode=json_mode)
