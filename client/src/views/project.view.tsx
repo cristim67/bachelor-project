@@ -13,6 +13,7 @@ import {
 } from "../network/api_axios";
 import axios from "axios";
 import { useFetchOnce } from "../hooks/useFetchOnce";
+import { VM } from "@stackblitz/sdk";
 
 interface FileStructure {
   type: "file" | "directory";
@@ -38,6 +39,7 @@ export const Project = () => {
   const [isGeneratingProject, setIsGeneratingProject] = useState(false);
   const [userInput, setUserInput] = useState<string>("");
   const requirementsRef = useRef<HTMLPreElement>(null);
+  const [vm, setVm] = useState<VM | null>(null);
 
   useEffect(() => {
     if (requirementsRef.current) {
@@ -162,31 +164,7 @@ export const Project = () => {
 
             // Show in Stackblitz only after all files are loaded
             if (editorRef.current) {
-              try {
-                sdk.embedProject(
-                  editorRef.current,
-                  {
-                    files: convertToStackblitzFiles(fileStructures),
-                    title: "Python Project",
-                    description: "Python FastAPI Project Viewer",
-                    template: "node",
-                    settings: {
-                      compile: {
-                        trigger: "auto",
-                      },
-                    },
-                  },
-                  {
-                    height: "100%",
-                    showSidebar: true,
-                    view: "editor",
-                    theme: "dark",
-                    hideNavigation: true,
-                  },
-                );
-              } catch (error) {
-                console.error("Failed to embed Stackblitz project:", error);
-              }
+              embedStackblitzProject(fileStructures);
             }
           }
         } else {
@@ -432,41 +410,7 @@ export const Project = () => {
                   console.log("Project loaded into state");
 
                   if (editorRef.current) {
-                    try {
-                      const stackblitzFiles =
-                        convertToStackblitzFiles(fileStructures);
-                      console.log(
-                        "Stackblitz files:",
-                        Object.keys(stackblitzFiles),
-                      );
-
-                      sdk.embedProject(
-                        editorRef.current,
-                        {
-                          files: stackblitzFiles,
-                          title: "Python Project",
-                          description: "Python FastAPI Project Viewer",
-                          template: "node",
-                          settings: {
-                            compile: {
-                              trigger: "auto",
-                            },
-                          },
-                        },
-                        {
-                          height: "100%",
-                          showSidebar: true,
-                          view: "editor",
-                          theme: "dark",
-                          hideNavigation: true,
-                        },
-                      );
-                    } catch (error) {
-                      console.error(
-                        "Failed to embed Stackblitz project:",
-                        error,
-                      );
-                    }
+                    embedStackblitzProject(fileStructures);
                   }
                 }
                 return;
@@ -538,41 +482,7 @@ export const Project = () => {
                   console.log("Project loaded into state");
 
                   if (editorRef.current) {
-                    try {
-                      const stackblitzFiles =
-                        convertToStackblitzFiles(fileStructures);
-                      console.log(
-                        "Stackblitz files:",
-                        Object.keys(stackblitzFiles),
-                      );
-
-                      sdk.embedProject(
-                        editorRef.current,
-                        {
-                          files: stackblitzFiles,
-                          title: "Python Project",
-                          description: "Python FastAPI Project Viewer",
-                          template: "node",
-                          settings: {
-                            compile: {
-                              trigger: "auto",
-                            },
-                          },
-                        },
-                        {
-                          height: "100%",
-                          showSidebar: true,
-                          view: "editor",
-                          theme: "dark",
-                          hideNavigation: true,
-                        },
-                      );
-                    } catch (error) {
-                      console.error(
-                        "Failed to embed Stackblitz project:",
-                        error,
-                      );
-                    }
+                    embedStackblitzProject(fileStructures);
                   }
                 } catch (error) {
                   console.error("Error processing code.zip:", error);
@@ -598,7 +508,7 @@ export const Project = () => {
     } catch (error) {
       console.error("Error checking project S3:", error);
     }
-  }, [id, generateRequirements]);
+  }, [id, generateRequirements, theme]);
 
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
@@ -644,15 +554,17 @@ export const Project = () => {
     return files;
   };
 
-  useEffect(() => {
-    if (editorRef.current && project) {
-      try {
-        sdk.embedProject(
+  const embedStackblitzProject = (files: FileStructure[]) => {
+    if (!editorRef.current) return;
+
+    try {
+      sdk
+        .embedProject(
           editorRef.current,
           {
-            files: convertToStackblitzFiles(project.structure),
-            title: "Python Project",
-            description: "Python FastAPI Project Viewer",
+            files: convertToStackblitzFiles(files),
+            title: "Express Project",
+            description: "Express Project Viewer",
             template: "node",
             settings: {
               compile: {
@@ -664,13 +576,27 @@ export const Project = () => {
             height: "100%",
             showSidebar: true,
             view: "editor",
-            theme: "dark",
+            theme: theme === "light" ? "light" : "dark",
             hideNavigation: true,
           },
-        );
-      } catch (error) {
-        console.error("Failed to embed Stackblitz project:", error);
-      }
+        )
+        .then((vm) => {
+          setVm(vm);
+        });
+    } catch (error) {
+      console.error("Failed to embed Stackblitz project:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (vm) {
+      vm.editor.setTheme(theme === "light" ? "light" : "dark");
+    }
+  }, [theme, vm]);
+
+  useEffect(() => {
+    if (project) {
+      embedStackblitzProject(project.structure);
     }
   }, [project]);
 
@@ -856,7 +782,12 @@ export const Project = () => {
       <div
         ref={editorRef}
         id="embed-stackblitz"
-        className="w-1/2 h-[calc(100vh-64px)] border-l border-gray-200 overflow-hidden bg-[#1e1e1e] relative"
+        className={`w-1/2 h-[calc(100vh-64px)] 
+        ${
+          theme === "light"
+            ? "border-l border-gray-200"
+            : "border-l border-[#1e1f22]"
+        } overflow-hidden bg-[#1e1e1e] relative`}
       >
         {isGeneratingProject && (
           <div className="absolute inset-0 flex items-center justify-center bg-[#1e1e1e] bg-opacity-90 z-50">
