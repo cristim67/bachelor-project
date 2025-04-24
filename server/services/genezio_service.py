@@ -7,6 +7,7 @@ name_generator = NameGenerator()
 
 
 async def create_mongodb_uri():
+    return "disabled for now"
     try:
         async with httpx.AsyncClient() as client:
             create_response = await client.post(
@@ -50,6 +51,7 @@ async def create_mongodb_uri():
 
 
 async def create_postgres_uri():
+    return "disabled for now"
     try:
         async with httpx.AsyncClient() as client:
             # First create the PostgreSQL database
