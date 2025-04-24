@@ -93,78 +93,110 @@ export const Project = () => {
           console.log("Project generation completed");
           setIsGeneratingProject(false);
 
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          console.log("Checking S3 after project generation...");
-          const updatedS3Info = await checkProjectS3(id);
-          console.log("Updated S3 Info:", updatedS3Info);
+          // Add retry logic for S3 download
+          let retryCount = 0;
+          const maxRetries = 3;
+          const retryDelay = 2000; // 2 seconds
 
-          if (
-            updatedS3Info &&
-            updatedS3Info.s3_info &&
-            updatedS3Info.s3_info.s3_presigned_url
-          ) {
-            console.log("Downloading project files...");
-            const s3Response = await axios.get(
-              updatedS3Info.s3_info.s3_presigned_url,
-              {
-                responseType: "arraybuffer",
-              },
-            );
+          while (retryCount < maxRetries) {
+            try {
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+              console.log(
+                `Checking S3 after project generation (attempt ${
+                  retryCount + 1
+                })...`,
+              );
+              const updatedS3Info = await checkProjectS3(id);
+              console.log("Updated S3 Info:", updatedS3Info);
 
-            // Create a new JSZip instance and load the response data
-            const zip = new JSZip();
-            await zip.loadAsync(s3Response.data);
-            const files: Record<string, string> = {};
+              if (
+                updatedS3Info &&
+                updatedS3Info.s3_info &&
+                updatedS3Info.s3_info.s3_presigned_url
+              ) {
+                console.log("Downloading project files...");
+                const s3Response = await axios.get(
+                  updatedS3Info.s3_info.s3_presigned_url,
+                  {
+                    responseType: "arraybuffer",
+                    timeout: 30000, // 30 second timeout
+                  },
+                );
 
-            // Get all files from the zip
-            for (const [filename, file] of Object.entries(zip.files)) {
-              if (!file.dir) {
-                const content = await file.async("string");
-                files[filename] = content;
+                // Verify the response data
+                if (!s3Response.data || s3Response.data.length === 0) {
+                  throw new Error("Empty response from S3");
+                }
+
+                // Create a new JSZip instance and load the response data
+                const zip = new JSZip();
+                await zip.loadAsync(s3Response.data);
+                const files: Record<string, string> = {};
+
+                // Get all files from the zip
+                for (const [filename, file] of Object.entries(zip.files)) {
+                  if (!file.dir) {
+                    const content = await file.async("string");
+                    files[filename] = content;
+                  }
+                }
+
+                console.log("Available files in ZIP:", Object.keys(files));
+
+                // Get code.zip from the code directory
+                const codeZipFile = files["code/code.zip"];
+                if (!codeZipFile) {
+                  throw new Error("Code zip not found in project");
+                }
+
+                // Create a new JSZip instance for the code.zip content
+                const codeZip = new JSZip();
+                await codeZip.loadAsync(codeZipFile);
+
+                // Extract files from code.zip
+                const codeFiles: Record<string, string> = {};
+                for (const [filename, file] of Object.entries(codeZip.files)) {
+                  if (!file.dir) {
+                    const content = await file.async("string");
+                    codeFiles[filename] = content;
+                  }
+                }
+
+                console.log("Files in code.zip:", Object.keys(codeFiles));
+
+                const fileStructures: FileStructure[] = Object.entries(
+                  codeFiles,
+                ).map(([path, content]) => ({
+                  type: "file" as const,
+                  path: `./${path}`,
+                  content,
+                }));
+
+                const newProject: ProjectStructure = {
+                  structure: fileStructures,
+                };
+
+                setProject(newProject);
+                console.log("Project loaded into state");
+
+                // Show in Stackblitz only after all files are loaded
+                if (editorRef.current) {
+                  embedStackblitzProject(fileStructures);
+                }
+
+                // If we get here, everything worked - break the retry loop
+                break;
               }
-            }
-
-            console.log("Available files in ZIP:", Object.keys(files));
-
-            // Get code.zip from the code directory
-            const codeZipFile = files["code/code.zip"];
-            if (!codeZipFile) {
-              throw new Error("Code zip not found in project");
-            }
-
-            // Create a new JSZip instance for the code.zip content
-            const codeZip = new JSZip();
-            await codeZip.loadAsync(codeZipFile);
-
-            // Extract files from code.zip
-            const codeFiles: Record<string, string> = {};
-            for (const [filename, file] of Object.entries(codeZip.files)) {
-              if (!file.dir) {
-                const content = await file.async("string");
-                codeFiles[filename] = content;
+            } catch (error: unknown) {
+              console.error(`Attempt ${retryCount + 1} failed:`, error);
+              retryCount++;
+              if (retryCount === maxRetries) {
+                throw new Error(
+                  `Failed to download project after ${maxRetries} attempts: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`,
+                );
               }
-            }
-
-            console.log("Files in code.zip:", Object.keys(codeFiles));
-
-            const fileStructures: FileStructure[] = Object.entries(
-              codeFiles,
-            ).map(([path, content]) => ({
-              type: "file" as const,
-              path: `./${path}`,
-              content,
-            }));
-
-            const newProject: ProjectStructure = {
-              structure: fileStructures,
-            };
-
-            setProject(newProject);
-            console.log("Project loaded into state");
-
-            // Show in Stackblitz only after all files are loaded
-            if (editorRef.current) {
-              embedStackblitzProject(fileStructures);
             }
           }
         } else {
@@ -173,6 +205,7 @@ export const Project = () => {
         }
       } catch (error) {
         console.error("Error generating project:", error);
+        throw error; // Re-throw to be caught by the outer try-catch
       } finally {
         setIsGeneratingRequirements(false);
         setIsGeneratingProject(false);

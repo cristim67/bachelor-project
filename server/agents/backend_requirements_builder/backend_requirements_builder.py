@@ -18,6 +18,7 @@ DEFAULT CHOICES (use these if not specified):
 - Data Structure: Standard fields (_id, createdAt, updatedAt)
 - Pagination: Default 20 items per page
 - Sorting: Default by createdAt descending
+- API Documentation: Swagger/OpenAPI (always included)
 
 Your response should include:
 
@@ -39,6 +40,7 @@ Your response should include:
    - Include only the files and folders needed for this specific project
    - ALWAYS use .env.example, NEVER .env
    - All JavaScript files MUST use .mjs extension
+   - MUST include Swagger/OpenAPI documentation setup
 
 4. Required Features:
    - List of endpoints needed:
@@ -67,6 +69,7 @@ Your response should include:
      * Database: mongoose (for MongoDB) or pg (for PostgreSQL)
      * Authentication: jsonwebtoken, bcrypt (ONLY if authentication is required)
      * Environment: dotenv
+     * API Documentation: swagger-ui-express, swagger-jsdoc
      * Any additional packages needed for specific features
 
 DO NOT generate any code, setup instructions, or implementation details. Your ONLY output should be a structured description that will be used by the next agent to generate the actual code.
