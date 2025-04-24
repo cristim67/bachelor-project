@@ -19,6 +19,7 @@ DEFAULT CHOICES (use these if not specified):
 - Pagination: Default 20 items per page
 - Sorting: Default by createdAt descending
 - API Documentation: Swagger/OpenAPI (always included)
+- CORS: Enabled with default configuration
 
 Your response should include:
 
@@ -70,6 +71,7 @@ Your response should include:
      * Authentication: jsonwebtoken, bcrypt (ONLY if authentication is required)
      * Environment: dotenv
      * API Documentation: swagger-ui-express, swagger-jsdoc
+     * CORS: cors
      * Any additional packages needed for specific features
 
 DO NOT generate any code, setup instructions, or implementation details. Your ONLY output should be a structured description that will be used by the next agent to generate the actual code.
