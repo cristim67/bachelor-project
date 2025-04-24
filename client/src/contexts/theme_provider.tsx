@@ -17,7 +17,7 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     const savedTheme = localStorage.getItem("theme");
     const initialTheme =
-      savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
+      savedTheme === "light" || savedTheme === "dark" ? savedTheme : "light";
     document.body.classList.remove("light", "dark");
     document.body.classList.add(initialTheme);
     return initialTheme;

@@ -183,6 +183,9 @@ export const Project = () => {
   useFetchOnce(async () => {
     if (!id) return;
     try {
+      // Add a small delay to ensure project is fully created
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       console.log("Starting initial S3 check for project:", id);
       const s3Response = await checkProjectS3(id);
       console.log("S3 check response:", s3Response);
@@ -525,7 +528,18 @@ export const Project = () => {
           responseType: "blob",
         });
 
-        const url = window.URL.createObjectURL(s3Response.data);
+        const zip = new JSZip();
+        await zip.loadAsync(s3Response.data);
+
+        // Get the code.zip file from the code directory
+        const codeZipFile = zip.file("code/code.zip");
+        if (!codeZipFile) {
+          throw new Error("Code zip not found in project");
+        }
+
+        // Create a new blob with just the code.zip content
+        const codeZipBlob = await codeZipFile.async("blob");
+        const url = window.URL.createObjectURL(codeZipBlob);
         const link = document.createElement("a");
         link.href = url;
         link.download = `project-${id}.zip`;
@@ -548,7 +562,18 @@ export const Project = () => {
     structure.forEach((item) => {
       if (item.type === "file") {
         const cleanPath = item.path.replace(/^\.?\//, "");
-        files[cleanPath] = item.content || "";
+        let content = item.content || "";
+
+        if (cleanPath.endsWith(".json")) {
+          try {
+            const jsonContent = JSON.parse(content);
+            content = JSON.stringify(jsonContent, null, 2);
+          } catch (e) {
+            console.error(`Error formatting JSON file ${cleanPath}:`, e);
+          }
+        }
+
+        files[cleanPath] = content;
       }
     });
     return files;
@@ -578,6 +603,7 @@ export const Project = () => {
             view: "editor",
             theme: theme === "light" ? "light" : "dark",
             hideNavigation: true,
+            forceEmbedLayout: true,
           },
         )
         .then((vm) => {
