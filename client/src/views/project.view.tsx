@@ -14,6 +14,7 @@ import {
 import axios from "axios";
 import { useFetchOnce } from "../hooks/useFetchOnce";
 import { VM } from "@stackblitz/sdk";
+import { format } from "prettier/standalone";
 
 interface FileStructure {
   type: "file" | "directory";
@@ -93,10 +94,14 @@ export const Project = () => {
           console.log("Project generation completed");
           setIsGeneratingProject(false);
 
+          // Add a delay and refresh after project generation
+          await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second delay
+          window.location.reload(); // Refresh the page
+
           // Add retry logic for S3 download
           let retryCount = 0;
           const maxRetries = 3;
-          const retryDelay = 2000; // 2 seconds
+          const retryDelay = 5000; // 5 seconds
 
           while (retryCount < maxRetries) {
             try {
@@ -119,7 +124,7 @@ export const Project = () => {
                   updatedS3Info.s3_info.s3_presigned_url,
                   {
                     responseType: "arraybuffer",
-                    timeout: 30000, // 30 second timeout
+                    timeout: 60000, // 60 second timeout
                   },
                 );
 
@@ -128,64 +133,77 @@ export const Project = () => {
                   throw new Error("Empty response from S3");
                 }
 
-                // Create a new JSZip instance and load the response data
-                const zip = new JSZip();
-                await zip.loadAsync(s3Response.data);
-                const files: Record<string, string> = {};
+                try {
+                  // Create a new JSZip instance and load the response data
+                  const zip = new JSZip();
+                  await zip.loadAsync(s3Response.data);
 
-                // Get all files from the zip
-                for (const [filename, file] of Object.entries(zip.files)) {
-                  if (!file.dir) {
-                    const content = await file.async("string");
-                    files[filename] = content;
+                  // Verify the zip file is not corrupted
+                  if (Object.keys(zip.files).length === 0) {
+                    throw new Error("Corrupted zip: No files found in archive");
                   }
-                }
 
-                console.log("Available files in ZIP:", Object.keys(files));
+                  const files: Record<string, string> = {};
 
-                // Get code.zip from the code directory
-                const codeZipFile = files["code/code.zip"];
-                if (!codeZipFile) {
-                  throw new Error("Code zip not found in project");
-                }
-
-                // Create a new JSZip instance for the code.zip content
-                const codeZip = new JSZip();
-                await codeZip.loadAsync(codeZipFile);
-
-                // Extract files from code.zip
-                const codeFiles: Record<string, string> = {};
-                for (const [filename, file] of Object.entries(codeZip.files)) {
-                  if (!file.dir) {
-                    const content = await file.async("string");
-                    codeFiles[filename] = content;
+                  // Get all files from the zip
+                  for (const [filename, file] of Object.entries(zip.files)) {
+                    if (!file.dir) {
+                      const content = await file.async("string");
+                      files[filename] = content;
+                    }
                   }
+
+                  console.log("Available files in ZIP:", Object.keys(files));
+
+                  // Get code.zip from the code directory
+                  const codeZipFile = files["code/code.zip"];
+                  if (!codeZipFile) {
+                    throw new Error("Code zip not found in project");
+                  }
+
+                  // Create a new JSZip instance for the code.zip content
+                  const codeZip = new JSZip();
+                  await codeZip.loadAsync(codeZipFile);
+
+                  // Extract files from code.zip
+                  const codeFiles: Record<string, string> = {};
+                  for (const [filename, file] of Object.entries(
+                    codeZip.files,
+                  )) {
+                    if (!file.dir) {
+                      const content = await file.async("string");
+                      codeFiles[filename] = content;
+                    }
+                  }
+
+                  console.log("All files in code.zip:", Object.keys(codeFiles));
+
+                  const fileStructures: FileStructure[] = Object.entries(
+                    codeFiles,
+                  ).map(([path, content]) => ({
+                    type: "file" as const,
+                    path: `./${path}`,
+                    content,
+                  }));
+
+                  const newProject: ProjectStructure = {
+                    structure: fileStructures,
+                  };
+
+                  setProject(newProject);
+                  console.log("Project loaded into state");
+
+                  // Show in Stackblitz only after all files are loaded
+                  if (editorRef.current) {
+                    embedStackblitzProject(fileStructures);
+                  }
+
+                  // If we get here, everything worked - break the retry loop
+                  break;
+                } catch (error: unknown) {
+                  console.error("Error processing code.zip:", error);
+                  throw error;
                 }
-
-                console.log("Files in code.zip:", Object.keys(codeFiles));
-
-                const fileStructures: FileStructure[] = Object.entries(
-                  codeFiles,
-                ).map(([path, content]) => ({
-                  type: "file" as const,
-                  path: `./${path}`,
-                  content,
-                }));
-
-                const newProject: ProjectStructure = {
-                  structure: fileStructures,
-                };
-
-                setProject(newProject);
-                console.log("Project loaded into state");
-
-                // Show in Stackblitz only after all files are loaded
-                if (editorRef.current) {
-                  embedStackblitzProject(fileStructures);
-                }
-
-                // If we get here, everything worked - break the retry loop
-                break;
               }
             } catch (error: unknown) {
               console.error(`Attempt ${retryCount + 1} failed:`, error);
@@ -398,9 +416,8 @@ export const Project = () => {
                   }
 
                   const innerCodeZip = new JSZip();
-                  const innerZipContent = await innerZipFile.async(
-                    "arraybuffer",
-                  );
+                  const innerZipContent =
+                    await innerZipFile.async("arraybuffer");
                   await innerCodeZip.loadAsync(innerZipContent);
 
                   const codeFiles: Record<string, string> = {};
@@ -412,6 +429,33 @@ export const Project = () => {
                         const content = await file.async("string");
                         const cleanPath = filename.replace(/^\.?\//, "");
                         codeFiles[cleanPath] = content;
+                        // If this is the .env file, create .stackblitzrc from it
+                        if (cleanPath === ".env") {
+                          const envVars = content
+                            .split("\n")
+                            .filter(
+                              (line) => line.trim() && !line.startsWith("#"),
+                            )
+                            .reduce(
+                              (acc, line) => {
+                                const [key, value] = line.split("=");
+                                if (key && value) {
+                                  acc[key.trim()] = value.trim();
+                                }
+                                return acc;
+                              },
+                              {} as Record<string, string>,
+                            );
+
+                          codeFiles[".stackblitzrc"] = JSON.stringify(
+                            {
+                              startCommand: "npm start",
+                              env: envVars,
+                            },
+                            null,
+                            2,
+                          );
+                        }
                       } catch (error) {
                         console.error(
                           `Error extracting file ${filename}:`,
@@ -470,9 +514,8 @@ export const Project = () => {
                   }
 
                   const innerCodeZip = new JSZip();
-                  const innerZipContent = await innerZipFile.async(
-                    "arraybuffer",
-                  );
+                  const innerZipContent =
+                    await innerZipFile.async("arraybuffer");
                   await innerCodeZip.loadAsync(innerZipContent);
 
                   const codeFiles: Record<string, string> = {};
@@ -484,6 +527,34 @@ export const Project = () => {
                         const content = await file.async("string");
                         const cleanPath = filename.replace(/^\.?\//, "");
                         codeFiles[cleanPath] = content;
+
+                        // If this is the .env file, create .stackblitzrc from it
+                        if (cleanPath === ".env") {
+                          const envVars = content
+                            .split("\n")
+                            .filter(
+                              (line) => line.trim() && !line.startsWith("#"),
+                            )
+                            .reduce(
+                              (acc, line) => {
+                                const [key, value] = line.split("=");
+                                if (key && value) {
+                                  acc[key.trim()] = value.trim();
+                                }
+                                return acc;
+                              },
+                              {} as Record<string, string>,
+                            );
+
+                          codeFiles[".stackblitzrc"] = JSON.stringify(
+                            {
+                              startCommand: "npm start",
+                              env: envVars,
+                            },
+                            null,
+                            2,
+                          );
+                        }
                       } catch (error) {
                         console.error(
                           `Error extracting file ${filename}:`,
@@ -612,15 +683,65 @@ export const Project = () => {
     return files;
   };
 
-  const embedStackblitzProject = (files: FileStructure[]) => {
+  const formatCode = async (
+    files: Record<string, string>,
+  ): Promise<Record<string, string>> => {
+    const formattedFiles: Record<string, string> = {};
+
+    for (const [filename, content] of Object.entries(files)) {
+      if (
+        filename.endsWith(".mjs") ||
+        filename.endsWith(".js") ||
+        filename.endsWith(".ts") ||
+        filename.endsWith(".tsx")
+      ) {
+        try {
+          const parser =
+            filename.endsWith(".ts") || filename.endsWith(".tsx")
+              ? "typescript"
+              : "babel";
+          const formattedContent = await format(content, {
+            parser,
+            semi: true,
+            singleQuote: true,
+            tabWidth: 2,
+            trailingComma: "es5",
+            printWidth: 100,
+            bracketSpacing: true,
+            arrowParens: "always",
+            endOfLine: "lf",
+            quoteProps: "as-needed",
+            jsxSingleQuote: false,
+            bracketSameLine: false,
+            embeddedLanguageFormatting: "auto",
+            singleAttributePerLine: false,
+            filepath: filename,
+          });
+          formattedFiles[filename] = formattedContent;
+        } catch (error) {
+          console.warn(`Error formatting ${filename}:`, error);
+          formattedFiles[filename] = content;
+        }
+      } else {
+        formattedFiles[filename] = content;
+      }
+    }
+
+    return formattedFiles;
+  };
+
+  const embedStackblitzProject = async (files: FileStructure[]) => {
     if (!editorRef.current) return;
 
     try {
+      const stackblitzFiles = convertToStackblitzFiles(files);
+      const formattedFiles = await formatCode(stackblitzFiles);
+
       sdk
         .embedProject(
           editorRef.current,
           {
-            files: convertToStackblitzFiles(files),
+            files: formattedFiles,
             title: "Express Project",
             description: "Express Project Viewer",
             template: "node",
@@ -849,7 +970,11 @@ export const Project = () => {
         } overflow-hidden bg-[#1e1e1e] relative`}
       >
         {isGeneratingProject && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#1e1e1e] bg-opacity-90 z-50">
+          <div
+            className={`absolute inset-0 flex items-center justify-center ${
+              theme === "light" ? "bg-white" : "bg-[#1e1e1e]"
+            } bg-opacity-90 z-50`}
+          >
             <div className="flex flex-col items-center gap-4">
               <svg className="w-8 h-8 animate-spin" viewBox="0 0 24 24">
                 <circle
@@ -867,7 +992,11 @@ export const Project = () => {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              <span className="text-white text-lg">
+              <span
+                className={`text-lg ${
+                  theme === "light" ? "text-black" : "text-white"
+                }`}
+              >
                 Generating project files...
               </span>
             </div>

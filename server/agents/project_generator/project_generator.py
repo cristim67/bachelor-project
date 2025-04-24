@@ -21,10 +21,41 @@ The JSON structure should be in the following format:
     ]
 }
 
+DEFAULT CHOICES (use these if not specified):
+1. Database:
+   - Default: MongoDB
+   - Alternative: PostgreSQL (only if explicitly requested)
+   - Connection strings:
+     * MongoDB: process.env.MONGODB_URI
+     * PostgreSQL: process.env.POSTGRES_URI
+
+2. API Architecture:
+   - Default: REST
+   - Alternative: GraphQL (only if explicitly requested)
+   - Documentation: Swagger/OpenAPI (always included)
+   - CORS: Enabled with default configuration
+
+3. Authentication & Security:
+   - Default: None
+   - Only include if explicitly requested
+   - If included, must specify:
+     * Authentication method (JWT, OAuth, etc.)
+     * Authorization levels
+     * Protected routes
+
+4. Data Handling:
+   - Default pagination: 20 items per page
+   - Default sorting: createdAt descending
+   - Standard fields in all models:
+     * _id (ObjectId)
+     * createdAt (Date)
+     * updatedAt (Date)
+   - Timestamps are automatically managed
+
 Rules:
 1. Required files:
-   - package.json with all necessary dependencies
-   - .env.example
+   - package.json with all necessary dependencies and start command
+   - .env.example (NEVER create .env file)
    - All JavaScript files must use .mjs extension
 
 2. Code requirements:
@@ -39,6 +70,16 @@ Rules:
    - Every route handler must have a complete implementation
    - Every service must have a complete implementation
    - Every model must have a complete implementation
+   - MUST use dotenv package and load environment variables at the start of the application
+   - MUST include dotenv configuration in the main application file
+   - For configuration files (like env.mjs):
+     * Use named exports instead of default exports
+     * Example: export const config = { ... } instead of export default { ... }
+     * Import using: import { config } from './config/env.mjs'
+   - For utility functions and services:
+     * Use named exports for all functions and classes
+     * Example: export function myFunction() { ... }
+     * Import using: import { myFunction } from './utils/myFunction.mjs'
 
 3. Project structure:
    - Separate routes, models, services, and middleware
@@ -46,6 +87,22 @@ Rules:
    - Include proper validation
    - Include proper HTTP status codes
    - All JavaScript files must end in .mjs
+   - The swagger documentation must be mounted on /api/docs
+   - MUST include Swagger/OpenAPI documentation setup with:
+     * Proper integration in the main application file
+     * JSDoc comments for all routes and schemas
+     * Automatic generation of API documentation
+     * Interactive UI for testing endpoints
+     * Real-time documentation updates
+   - MUST include .gitignore with:
+     * node_modules/
+     * .env
+     * .DS_Store
+     * *.log
+     * coverage/
+     * dist/
+     * build/
+     * .stackblitzrc
 
 4. Implementation:
    - Complete CRUD operations where needed
@@ -66,6 +123,17 @@ IMPORTANT:
 - Follow Express.js best practices
 - NEVER include comments or placeholders
 - EVERY piece of code must be fully implemented
+- NEVER create .stackblitzrc file in the response
+- ALWAYS use named exports for configuration files and utilities
+- NEVER use default exports
+- NEVER create .env file (only .env.example)
+
+IMPORTANT ENVIRONMENT VARIABLES (MUST USE THESE EXACT NAMES):
+1. Database connection strings:
+   - MongoDB: MONGODB_URI
+   - PostgreSQL: POSTGRES_URI
+
+Note: use these names if the project requires a database like MongoDB or PostgreSQL
 """
 
 wrapping_prompt: str = """<<USER_PROMPT>>"""
