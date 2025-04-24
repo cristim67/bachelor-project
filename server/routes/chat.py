@@ -9,13 +9,14 @@ import zipfile
 
 from agents.agent_factory import AgentFactory, AgentType
 from config.logger import logger
-from dtos.agent import AgentOptions, ChatRequest
+from dtos.agent import ChatRequest
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from repository.project import ProjectRepository
 from routes.utils import BearerToken
+from services.genezio_service import create_mongodb_uri, create_postgres_uri
 from services.s3_service import (
     create_files_for_s3_json_content,
     download_from_s3,
@@ -233,6 +234,12 @@ async def project_generator(
                 detail="Could not find valid JSON structure in the response. Please try again.",
             )
 
+        # Remove .env file from structure if llm returns it
+        if isinstance(json_content, dict) and "structure" in json_content:
+            json_content["structure"] = [
+                item for item in json_content["structure"] if not (item["type"] == "file" and item["path"] == ".env")
+            ]
+
         try:
             logger.debug(f"Project generator response: {json_content}")
             logger.info(f"Project generator response: {json_content}")
@@ -263,8 +270,10 @@ async def project_generator(
             with open(os.path.join(structure_dir, "project.json"), "w") as f:
                 json.dump(json_content, f, indent=2)
 
+            db_created, db_uri = False, None
+
             # Create actual code files in the code directory based on json_content
-            def create_files_from_structure(structure, base_path):
+            async def create_files_from_structure(structure, base_path):
                 for item in structure:
                     if item["type"] == "file":
                         # Create directory structure if needed
@@ -282,10 +291,40 @@ async def project_generator(
                         dir_path = os.path.join(base_path, item["path"].replace("./", ""))
                         os.makedirs(dir_path, exist_ok=True)
                         if isinstance(item.get("content"), list):
-                            create_files_from_structure(item["content"], base_path)
+                            await create_files_from_structure(item["content"], base_path)
 
             if isinstance(json_content, dict) and "structure" in json_content:
-                create_files_from_structure(json_content["structure"], code_dir)
+                await create_files_from_structure(json_content["structure"], code_dir)
+                # Create .env from .env.example if it exists
+                env_example_path = os.path.join(code_dir, ".env.example")
+                if os.path.exists(env_example_path):
+                    with open(env_example_path, "r") as f:
+                        env_content = f.read()
+                    env_file_path = os.path.join(code_dir, ".env")
+
+                    # Check if MONGODB_URI or POSTGRES_URI are mentioned
+                    if "MONGODB_URI" in env_content or "POSTGRES_URI" in env_content:
+                        # Create the actual URIs
+                        mongodb_uri = await create_mongodb_uri()
+                        postgres_uri = await create_postgres_uri()
+
+                        # Split content into lines and process each line
+                        lines = env_content.split("\n")
+                        processed_lines = []
+                        for line in lines:
+                            if line.strip().startswith("MONGODB_URI="):
+                                db_created, db_uri = True, mongodb_uri
+                                processed_lines.append(f"MONGODB_URI={mongodb_uri}")
+                            elif line.strip().startswith("POSTGRES_URI="):
+                                db_created, db_uri = True, postgres_uri
+                                processed_lines.append(f"POSTGRES_URI={postgres_uri}")
+                            else:
+                                processed_lines.append(line)
+
+                        env_content = "\n".join(processed_lines)
+
+                    with open(env_file_path, "w") as f:
+                        f.write(env_content)
 
             # Create ZIP for files in code directory
             zip_path = os.path.join(code_dir, "code.zip")
@@ -324,6 +363,8 @@ async def project_generator(
             # Update project with the new URL and folder
             project.s3_presigned_url = project_url
             project.s3_folder_name = project_folder
+            if db_created:
+                project.db_uri = db_uri
             await project.save()
 
             project_dict = jsonable_encoder(project)
