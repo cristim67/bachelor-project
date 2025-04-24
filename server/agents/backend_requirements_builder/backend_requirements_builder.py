@@ -40,7 +40,7 @@ Your response should include:
    - Include only the files and folders needed for this specific project
    - ALWAYS use .env.example, NEVER .env
    - All JavaScript files MUST use .mjs extension
-   - MUST include Swagger/OpenAPI documentation setup
+   - MUST include Swagger/OpenAPI documentation setup mounted on /api/docs
 
 4. Required Features:
    - List of endpoints needed:
