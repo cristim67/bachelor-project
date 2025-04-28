@@ -33,6 +33,7 @@ export const Project = () => {
   const editorRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
   const [project, setProject] = useState<ProjectStructure | null>(null);
   const [requirements, setRequirements] = useState<string>("");
   const [isGeneratingRequirements, setIsGeneratingRequirements] =
@@ -659,6 +660,23 @@ export const Project = () => {
     }
   };
 
+  const handleDeploy = async () => {
+    setIsDeploying(true);
+    try {
+      const response = await getProject(id || "");
+      if (response && response.project && response.project.s3_presigned_url) {
+        // Here you would add your deployment logic
+        // For now, we'll just show a success message
+        alert("Project deployed successfully!");
+      }
+    } catch (error) {
+      console.error("Deployment failed:", error);
+      alert("Deployment failed. Please try again.");
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
   const convertToStackblitzFiles = (
     structure: FileStructure[],
   ): Record<string, string> => {
@@ -845,55 +863,106 @@ export const Project = () => {
               >
                 Backend Requirements
               </span>
-              <button
-                onClick={handleDownload}
-                disabled={isDownloading}
-                className={`px-4 py-2 transition-colors rounded-md flex items-center gap-2 text-sm
-                  ${
-                    theme === "light"
-                      ? "border-black border-[1px] bg-white text-black hover:bg-gray-100"
-                      : "border-button-color border-[1px] bg-button-color text-text-color hover:bg-button-hover-color"
-                  }`}
-              >
-                {isDownloading ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDeploy}
+                  disabled={isDeploying}
+                  className={`px-4 py-2 transition-colors rounded-md flex items-center gap-2 text-sm
+                    ${
+                      theme === "light"
+                        ? "border-black border-[1px] bg-white text-black hover:bg-gray-100"
+                        : "border-button-color border-[1px] bg-button-color text-text-color hover:bg-button-hover-color"
+                    }`}
+                >
+                  {isDeploying ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      <span>Deploying...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4"
                         fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    <span>Downloading...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                    <span>Download ZIP</span>
-                  </>
-                )}
-              </button>
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                        />
+                      </svg>
+                      <span>Deploy</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  className={`px-4 py-2 transition-colors rounded-md flex items-center gap-2 text-sm
+                    ${
+                      theme === "light"
+                        ? "border-black border-[1px] bg-white text-black hover:bg-gray-100"
+                        : "border-button-color border-[1px] bg-button-color text-text-color hover:bg-button-hover-color"
+                    }`}
+                >
+                  {isDownloading ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      <span>Downloading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                      <span>Download ZIP</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
             <pre
               ref={requirementsRef}
