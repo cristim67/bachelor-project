@@ -1,5 +1,5 @@
 name: bachelor-project-build-machine
-region: us-east-1
+region: eu-central-1
 yamlVersion: 2
 container:
   path: ./Dockerfile
