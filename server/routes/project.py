@@ -71,3 +71,9 @@ async def check_project_s3(id: str, credentials: HTTPAuthorizationCredentials = 
     s3_info = {"s3_folder_name": project.s3_folder_name, "s3_presigned_url": project.s3_presigned_url}
 
     return JSONResponse(status_code=status.HTTP_200_OK, content={"code": status.HTTP_200_OK, "s3_info": s3_info})
+
+@router.put("/update/{id}/deployment-url")
+async def update_project(id: str, deployment_url: str, database_uri: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    session_token = credentials.credentials
+    project = await ProjectRepository.update_project_deployment_url(id, deployment_url, database_uri, session_token)
+    return {"code": 200, "project": project}

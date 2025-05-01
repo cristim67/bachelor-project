@@ -60,7 +60,9 @@ async def genezio_login():
 @app.post("/project-build")
 async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(security)):
     presigned_url = request.presigned_url
-    print("Presigned URL:", presigned_url)
+    project_name = request.project_name
+    region = request.region
+    project_id = request.project_id
     try:
         # genezio login
         print("Running genezio login...")
@@ -110,7 +112,7 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
         
         # genezio analyze 
         print("Running genezio analyze...")
-        analyze_result = subprocess.run(["genezio", "analyze"], 
+        analyze_result = subprocess.run(["genezio", "analyze", "--name", project_name, "--region", region], 
                                      capture_output=True, 
                                      text=True,
                                      cwd= os.path.join(temp_dir, "code"),
@@ -154,9 +156,39 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
         if deploy_result.stderr:
             print("Deploy errors:", deploy_result.stderr)
 
+        # Extract deployment URL
+        deploy_url_match = re.search(r'https://[a-zA-Z0-9-]+\.dev-fkt\.cloud\.genez\.io', deploy_result.stdout)
+        deploy_url = deploy_url_match.group(0) if deploy_url_match else None
+
+        # Extract database URI
+        db_uri_match = re.search(r'"value":"(mongodb\+srv://[^"]+)"', deploy_result.stdout)
+        db_uri = db_uri_match.group(1) if db_uri_match else None
+
+
+        if not deploy_url or not db_uri:
+            raise Exception("Failed to extract deployment URL or database URI from output")
+
+        # Update the project in the database
+        async with aiohttp.ClientSession() as session:
+            async with session.put(f"{os.getenv('CORE_API_URL')}/v1/project/update/{project_id}/deployment-url", params={"deployment_url": deploy_url, "database_uri": db_uri}, headers={"Authorization": f"Bearer {credentials.credentials}"}) as response:
+                if response.status != 200:
+                    raise Exception(f"Failed to update project in the database: {response.status}")
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, 
+            content={
+                "status": "success",
+                "deployment_url": deploy_url,
+                "database_uri": db_uri
+            }
+        )
+
     except Exception as e:
         print("Error during deployment:", str(e))
-        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"status": "error", "message": str(e)})
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            content={"status": "error", "message": str(e)}
+        )
 
 
 if __name__ == "__main__":

@@ -263,9 +263,17 @@ export async function deleteProject(id: string) {
   return response.data;
 }
 
-export async function deployProject(presignedUrl: string) {
+export async function deployProject(
+  presignedUrl: string,
+  projectName: string,
+  region: string,
+  projectId: string,
+) {
   const response = await buildMachineInstance.post("/project-build", {
     presigned_url: presignedUrl,
+    project_name: projectName,
+    region: region,
+    project_id: projectId,
   });
   return response.data;
 }

@@ -1,3 +1,5 @@
+import random
+import string
 from datetime import datetime
 
 from bson import ObjectId
@@ -8,6 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from models.project import Project
 from repository.session import SessionRepository
 from services.s3_service import S3Service
+from utils.name_generator import NameGenerator
 
 
 class ProjectRepository:
@@ -16,16 +19,26 @@ class ProjectRepository:
 
     @staticmethod
     async def create_project(project_input: ProjectInput, session_token: str):
+        name_generator = NameGenerator()
+        
         session = await SessionRepository.get_session(session_token)
         session_dict = jsonable_encoder(session)
         user_id = session_dict["user_id"]
         s3_folder_name = None
+        deployment_url = None
+        database_uri = None
+        name = name_generator.generate_color_animal_name(separator='-')+''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=6))
+        region = "eu-central-1"
 
         project = Project(
             idea=project_input.idea,
             user_id=user_id,
             is_public=project_input.is_public,
             s3_folder_name=s3_folder_name,
+            deployment_url=deployment_url,
+            database_uri=database_uri,
+            name=name,
+            region=region,
             created_at=datetime.now(),
             updated_at=datetime.now(),
             deleted_at=None,
@@ -89,3 +102,19 @@ class ProjectRepository:
         except Exception as e:
             logger.error(f"Error deleting project: {e}")
             raise HTTPException(status_code=500, detail="Internal server error")
+
+    @staticmethod
+    async def update_project_deployment_url(id: str, deployment_url: str, database_uri: str, session_token: str):
+        try:
+            project = await Project.find_one({"_id": ObjectId(id)})
+            if not project:
+                raise HTTPException(status_code=404, detail="Project not found")
+
+            project.deployment_url = deployment_url
+            project.database_uri = database_uri
+            await project.save()
+            return project
+        except Exception as e:
+            logger.error(f"Error updating project: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error")
+        

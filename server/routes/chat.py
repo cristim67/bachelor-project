@@ -270,10 +270,10 @@ async def project_generator(
 
                     name_generator = NameGenerator()
 
-                    four_letters_random = ''.join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=4))
+                    six_letters_random = ''.join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=6))
 
-                    group_content = group_content.replace("MONGODB_URI", f"{name_generator.generate_color_animal_name().upper()}_{four_letters_random}_URI")
-                    group_content = group_content.replace("POSTGRES_URI", f"{name_generator.generate_color_animal_name().upper()}_{four_letters_random}_URI")
+                    group_content = group_content.replace("MONGODB_URI", f"{name_generator.generate_color_animal_name().upper()}_{six_letters_random}_URI")
+                    group_content = group_content.replace("POSTGRES_URI", f"{name_generator.generate_color_animal_name().upper()}_{six_letters_random}_URI")
                     json_content = json.loads(group_content)
 
                     break
