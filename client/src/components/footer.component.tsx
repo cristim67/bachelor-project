@@ -47,9 +47,13 @@ export const Footer = () => {
             >
               <span className="text-xs">
                 {theme === "dark" ? (
-                  <img src={moon_svg} className="w-4 h-4 invert"></img>
+                  <img
+                    src={moon_svg}
+                    className="w-4 h-4 invert"
+                    alt="moon"
+                  ></img>
                 ) : (
-                  <img src={sun_svg} className="w-4 h-4"></img>
+                  <img src={sun_svg} className="w-4 h-4" alt="sun"></img>
                 )}
               </span>
             </div>
