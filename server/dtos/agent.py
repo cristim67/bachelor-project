@@ -9,6 +9,7 @@ class ProjectInfo(BaseModel):
 
 class AgentOptions(BaseModel):
     streaming: bool = True
+    max_tokens: Optional[int] = None
 
 
 class ChatMessage(BaseModel):

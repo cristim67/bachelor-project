@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 from agents.agent import Agent
 from agents.agent_factory import AgentType
@@ -112,5 +112,9 @@ class BackendRequirementsAgent(Agent):
     ) -> str:
         prompt = self.agent_prompt.replace("<<USER_PROMPT>>", message)
 
-        logger.info(prompt)
-        return self.ask(self.system_prompt, prompt, model, options.streaming)
+        return self.ask(
+            system_prompt=self.system_prompt,
+            prompt=prompt,
+            model=model,
+            streaming=options.streaming,
+        )

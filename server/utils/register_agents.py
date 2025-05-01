@@ -2,6 +2,7 @@ from agents.agent_factory import AgentFactory, AgentType
 from agents.backend_requirements_builder.backend_requirements_builder import (
     BackendRequirementsAgent,
 )
+from agents.enchant_user_prompt.enchant_user_prompt import EnchantUserPromptAgent
 from agents.project_generator.project_generator import ProjectGeneratorAgent
 from config.logger import logger
 
@@ -13,6 +14,7 @@ async def register_agents():
     agents = [
         (AgentType.BACKEND_REQUIREMENTS, BackendRequirementsAgent),
         (AgentType.PROJECT_GENERATOR, ProjectGeneratorAgent),
+        (AgentType.ENCHANT_USER_PROMPT, EnchantUserPromptAgent),
     ]
 
     for agent_type, agent_class in agents:

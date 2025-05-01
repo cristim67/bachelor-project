@@ -1,6 +1,6 @@
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 from agents.utils import LLMClient, LLMProvider, ModelConfig
 from config.env_handler import LANGFUSE_HOST, LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY
@@ -49,6 +49,7 @@ class Agent(ABC):
         model: str = None,
         streaming: bool = False,
         json_mode: bool = False,
+        max_tokens: Optional[int] = None,
     ):
         if model is None:
             model = ModelConfig.DEFAULT_MODELS[LLMProvider.OPENAI]
@@ -63,15 +64,14 @@ class Agent(ABC):
         )
 
         if streaming:
-            return await self._stream(system_prompt, prompt, model, json_mode)
-        return self._shoot(system_prompt, prompt, model, json_mode)
+            return await self._stream(system_prompt, prompt, model, json_mode, max_tokens)
+        return self._shoot(system_prompt, prompt, model, json_mode, max_tokens)
 
-    async def _stream(self, system_prompt: str, prompt: str, model: str, json_mode: bool):
+    async def _stream(self, system_prompt: str, prompt: str, model: str, json_mode: bool, max_tokens: int):
         provider = ModelConfig.get_model_provider(model)
         client = self.llm_client.get_client(provider, streaming=True)
 
         try:
-
             async def event_generator():
                 logger.info(
                     f"Attempting to ask: {prompt}",
@@ -86,6 +86,7 @@ class Agent(ABC):
                         ],
                         model=model,
                         **({"response_format": {"type": "json_object"}} if json_mode else {}),
+                        **({"max_tokens": max_tokens} if max_tokens is not None else {}),
                     ) as stream:
                         async for event in stream:
                             if event.type == "content.delta":
@@ -118,7 +119,7 @@ class Agent(ABC):
             logger.error(f"Agent Response Error: {error_message}")
             raise Exception(f"An error occurred while processing your request: {error_message}")
 
-    def _shoot(self, system_prompt: str, prompt: str, model: str, json_mode: bool):
+    def _shoot(self, system_prompt: str, prompt: str, model: str, json_mode: bool, max_tokens: int):
         provider = ModelConfig.get_model_provider(model)
         client = self.llm_client.get_client(provider, streaming=False)
 
@@ -126,7 +127,7 @@ class Agent(ABC):
             logger.info(
                 f"Attempting to ask: {prompt}",
             )
-
+            logger.info(f"Max tokens: {max_tokens}")
             if provider == LLMProvider.OPENAI:
                 openai_client: OpenAI = client
                 response = openai_client.chat.completions.create(
@@ -136,6 +137,7 @@ class Agent(ABC):
                     ],
                     model=model,
                     **({"response_format": {"type": "json_object"}} if json_mode else {}),
+                    **({"max_tokens": max_tokens} if max_tokens is not None else {}),
                 )
                 return response.choices[0].message.content
             elif provider == LLMProvider.ANTHROPIC:

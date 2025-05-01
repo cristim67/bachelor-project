@@ -405,3 +405,61 @@ async def project_generator(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error generating project: {str(e)}"
         )
+
+@router.post("/enhance-prompt")
+async def enhance_prompt(
+    request_data: ChatRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    try:
+        if not request_data.message.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Message cannot be empty",
+            )
+            
+        if not request_data.agent == AgentType.ENCHANT_USER_PROMPT:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Agent must be ENCHANT_USER_PROMPT")
+
+        user_id = await SessionRepository.get_user_by_session_token(
+            session_token=credentials.credentials
+        )
+        
+        user_repository = AuthRepository()
+        user = await user_repository.get_user(
+            id=user_id
+        )
+
+        subscription = user.subscription
+        max_tokens = subscription["max_tokens"]
+        token_usage = user.token_usage + 50
+
+        if token_usage >= max_tokens:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You have reached the maximum number of tokens")
+        
+        user.token_usage = token_usage
+        await user.save()
+
+        langfuse_session_id = None
+
+        if not request_data.langfuse_session_id:
+            langfuse_session_id = str(uuid.uuid4())
+
+        enchant_user_prompt_agent = AgentFactory.get_agent(AgentType.ENCHANT_USER_PROMPT, langfuse_session_id)
+        response = await enchant_user_prompt_agent.chat(
+            message=request_data.message,
+            history=request_data.history,
+            model=request_data.model,
+            options=request_data.options,
+        )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={"code": status.HTTP_200_OK, "enhanced_prompt": response}
+        )
+
+    except Exception as e:
+        logger.error(f"Error in enhance prompt: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error enhancing prompt: {str(e)}"
+        )

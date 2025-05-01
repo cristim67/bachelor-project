@@ -7,6 +7,7 @@ from agents.agent import Agent
 class AgentType(str, Enum):
     BACKEND_REQUIREMENTS = "backend_requirements"
     PROJECT_GENERATOR = "project_generator"
+    ENCHANT_USER_PROMPT = "enchant_user_prompt"
     # TODO: Add other agent types
 
 

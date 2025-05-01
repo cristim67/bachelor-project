@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 from agents.agent import Agent
 from agents.agent_factory import AgentType
@@ -157,8 +157,15 @@ class ProjectGeneratorAgent(Agent):
         model: str = None,
         options: AgentOptions = None,
         json_mode: bool = True,
+        max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> str:
         prompt = self.agent_prompt.replace("<<USER_PROMPT>>", message)
 
-        return self.ask(self.system_prompt, prompt, model, options.streaming, json_mode=json_mode)
+        return self.ask(
+            system_prompt=self.system_prompt,
+            prompt=prompt,
+            model=model,
+            streaming=options.streaming,
+            json_mode=json_mode,
+        )

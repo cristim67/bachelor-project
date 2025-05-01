@@ -274,3 +274,24 @@ export async function getUser() {
   const response = await instance.get("/v1/auth/user");
   return response.data;
 }
+
+export async function enhancePrompt(prompt: string) {
+  const response = await instance.post("/v1/chat/enhance-prompt", {
+    message: prompt,
+    history: [],
+    agent: "enchant_user_prompt",
+    model: "gpt-4o-mini",
+    options: {
+      streaming: false,
+    },
+  });
+
+  const userStr = localStorage.getItem("user");
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    user.token_usage = (user.token_usage || 0) + 50;
+    localStorage.setItem("user", JSON.stringify(user));
+  }
+
+  return response.data;
+}
