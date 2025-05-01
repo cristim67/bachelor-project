@@ -666,7 +666,7 @@ export const Project = () => {
     try {
       const response = await getProject(id || "");
       if (response && response.project && response.project.s3_presigned_url) {
-        deployProject(response.project.s3_presigned_url);
+        await deployProject(response.project.s3_presigned_url);
       }
     } catch (error) {
       console.error("Deployment failed:", error);
