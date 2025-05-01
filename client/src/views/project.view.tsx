@@ -10,6 +10,7 @@ import {
   getProject,
   generateBackendRequirements,
   checkProjectS3,
+  deployProject,
 } from "../network/api_axios";
 import axios from "axios";
 import { useFetchOnce } from "../hooks/useFetchOnce";
@@ -665,9 +666,7 @@ export const Project = () => {
     try {
       const response = await getProject(id || "");
       if (response && response.project && response.project.s3_presigned_url) {
-        // Here you would add your deployment logic
-        // For now, we'll just show a success message
-        alert("Project deployed successfully!");
+        deployProject(response.project.s3_presigned_url);
       }
     } catch (error) {
       console.error("Deployment failed:", error);

@@ -1,5 +1,6 @@
 import io
 import os
+import re
 import subprocess
 import tempfile
 import uuid
@@ -94,12 +95,31 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
                                      env={"CI": "true", **os.environ})
         print("Analyze output:", analyze_result.stdout)
 
-        print("Cat genezio.yaml file:")
-        with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
-            print(f.read())
         if analyze_result.stderr:
             print("Analyze errors:", analyze_result.stderr)
 
+        with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
+            yaml_content = f.read()
+            env_var_match = re.search(r'(\w+)_URI:', yaml_content)
+            if env_var_match:
+                new_db_name = env_var_match.group(1).lower().replace('_', '-')
+                yaml_content = re.sub(
+                    r'(services:\s+databases:\s+- name: )[^\n]+',
+                    r'\1' + new_db_name + '-db',
+                    yaml_content
+                )
+                yaml_content = re.sub(
+                    r'(\${{services\.databases\.)[^\.]+(\.(uri)}})',
+                    r'\1' + new_db_name + '-db' + r'\2',
+                    yaml_content
+                )
+
+                with open(os.path.join(temp_dir, "code", "genezio.yaml"), "w") as f:
+                    f.write(yaml_content)
+
+        print("Cat genezio.yaml file:")
+        with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
+            print(f.read())
         # genezio login
         print("Running genezio login...")
         login_result = subprocess.run(

@@ -266,6 +266,33 @@ class NameGenerator:
             "year",
             "century",
             "age",
+            "time",
+            "space",
+            "universe",
+            "galaxy",
+            "planet",
+            "star",
+            "moon",
+            "sun",
+            "sky",
+            "cloud",
+            "rain",
+            "wind",
+            "storm",
+            "lightning",
+            "thunder",
+            "fog",
+            "mist",
+            "haze",
+            "dust",
+            "sand",
+            "snow",
+            "ice",
+            "fire",
+            "lava",
+            "ash",
+            "ash",
+            "ash",
         ]
 
         # Track all used names
@@ -278,7 +305,7 @@ class NameGenerator:
         first_list: List[str],
         second_list: List[str],
         third_list: List[str],
-        separator: str = "-",
+        separator: str = "_",
         max_attempts: int = 100,
     ) -> str:
         """Generate a unique name that hasn't been used before."""
@@ -303,26 +330,26 @@ class NameGenerator:
         print(f"Generated name: {first}{separator}{second}{separator}{third}{separator}{timestamp}")
         return f"{first}{separator}{second}{separator}{third}{separator}{timestamp}"
 
-    def generate_animal_name(self, separator: str = "-") -> str:
+    def generate_animal_name(self, separator: str = "_") -> str:
         """Generate a unique random animal name with an adjective."""
         name = self._generate_unique_name(self.adjectives, self.animals, self.nouns, separator)
         self.used_names.add(name)
         return name
 
-    def generate_color_animal_name(self, separator: str = "-") -> str:
+    def generate_color_animal_name(self, separator: str = "_") -> str:
         """Generate a unique random animal name with a color."""
         name = self._generate_unique_name(self.colors, self.animals, self.nouns, separator)
         self.used_names.add(name)
         return name
 
-    def generate_nature_name(self, separator: str = "-") -> str:
+    def generate_nature_name(self, separator: str = "_") -> str:
         """Generate a unique random nature-themed name."""
         name = self._generate_unique_name(self.adjectives, self.nouns, self.animals, separator)
         self.used_names.add(name)
         return name
 
     def generate_custom_name(
-        self, first_list: Optional[List[str]] = None, second_list: Optional[List[str]] = None, separator: str = "-"
+        self, first_list: Optional[List[str]] = None, second_list: Optional[List[str]] = None, separator: str = "_"
     ) -> str:
         """Generate a unique custom name using provided lists or default lists."""
         if first_list is None:

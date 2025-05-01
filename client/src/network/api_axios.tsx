@@ -1,7 +1,12 @@
 import axios from "axios";
 import { toast } from "react-toastify";
-import { API_URL } from "../configs/env_handler";
+import { API_URL, BUILD_MACHINE_URL } from "../configs/env_handler";
 import { ProjectType } from "../dtos/project_types";
+
+const buildMachineInstance = axios.create({
+  baseURL: BUILD_MACHINE_URL,
+});
+
 const instance = axios.create({
   baseURL: API_URL,
 });
@@ -14,7 +19,27 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
+buildMachineInstance.interceptors.request.use((config) => {
+  const session = localStorage.getItem("apiToken");
+  if (session) {
+    config.headers.Authorization = `Bearer ${session}`;
+  }
+  return config;
+});
+
 instance.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response && error.response.data.detail) {
+      toast.error(error.response.data.detail);
+    }
+    return Promise.reject(error);
+  },
+);
+
+buildMachineInstance.interceptors.response.use(
   (response) => {
     return response;
   },
@@ -221,5 +246,12 @@ export async function getProjects() {
 
 export async function deleteProject(id: string) {
   const response = await instance.delete(`/v1/project/delete/${id}`);
+  return response.data;
+}
+
+export async function deployProject(presignedUrl: string) {
+  const response = await buildMachineInstance.post("/project-build", {
+    presigned_url: presignedUrl,
+  });
   return response.data;
 }

@@ -1,6 +1,7 @@
 import io
 import json
 import os
+import random
 import re
 import shutil
 import traceback
@@ -22,6 +23,7 @@ from services.s3_service import (
     download_from_s3,
     upload_zip_to_s3,
 )
+from utils.name_generator import NameGenerator
 
 router = APIRouter()
 
@@ -223,6 +225,15 @@ async def project_generator(
                     # Try to get the first group, if it exists
                     group_content = json_match.group(1) if len(json_match.groups()) > 0 else json_match.group(0)
                     json_content = json.loads(group_content)
+
+                    name_generator = NameGenerator()
+
+                    four_letters_random = ''.join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=4))
+
+                    group_content = group_content.replace("MONGODB_URI", f"{name_generator.generate_color_animal_name().upper()}_{four_letters_random}_URI")
+                    group_content = group_content.replace("POSTGRES_URI", f"{name_generator.generate_color_animal_name().upper()}_{four_letters_random}_URI")
+                    json_content = json.loads(group_content)
+
                     break
                 except json.JSONDecodeError:
                     continue
@@ -295,37 +306,6 @@ async def project_generator(
 
             if isinstance(json_content, dict) and "structure" in json_content:
                 await create_files_from_structure(json_content["structure"], code_dir)
-                # Create .env from .env.example if it exists
-                env_example_path = os.path.join(code_dir, ".env.example")
-                if os.path.exists(env_example_path):
-                    with open(env_example_path, "r") as f:
-                        env_content = f.read()
-                    env_file_path = os.path.join(code_dir, ".env")
-
-                    # Check if MONGODB_URI or POSTGRES_URI are mentioned
-                    if "MONGODB_URI" in env_content or "POSTGRES_URI" in env_content:
-                        # Create the actual URIs
-                        mongodb_uri = await create_mongodb_uri()
-                        postgres_uri = await create_postgres_uri()
-
-                        # Split content into lines and process each line
-                        lines = env_content.split("\n")
-                        processed_lines = []
-                        for line in lines:
-                            if line.strip().startswith("MONGODB_URI="):
-                                db_created, db_uri = True, mongodb_uri
-                                processed_lines.append(f"MONGODB_URI={mongodb_uri}")
-                            elif line.strip().startswith("POSTGRES_URI="):
-                                db_created, db_uri = True, postgres_uri
-                                processed_lines.append(f"POSTGRES_URI={postgres_uri}")
-                            else:
-                                processed_lines.append(line)
-
-                        env_content = "\n".join(processed_lines)
-
-                    with open(env_file_path, "w") as f:
-                        f.write(env_content)
-
             # Create ZIP for files in code directory
             zip_path = os.path.join(code_dir, "code.zip")
             with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
