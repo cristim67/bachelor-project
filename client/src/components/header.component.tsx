@@ -8,6 +8,23 @@ export const Header = () => {
   const { theme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [localUser, setLocalUser] = useState(user);
+
+  // Poll for user changes in localStorage
+  useEffect(() => {
+    const checkUserChanges = () => {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const newUser = JSON.parse(userStr);
+        if (JSON.stringify(newUser) !== JSON.stringify(localUser)) {
+          setLocalUser(newUser);
+        }
+      }
+    };
+
+    const interval = setInterval(checkUserChanges, 500);
+    return () => clearInterval(interval);
+  }, [localUser]);
 
   useEffect(() => {
     if (user?.profile_picture) {
@@ -77,11 +94,11 @@ export const Header = () => {
               }`}
             >
               <span className="text-sm font-medium text-text-primary">
-                {user?.subscription?.name || "Hobby"}
+                {localUser?.subscription?.name || "Hobby"}
               </span>
               <span className="text-sm text-text-secondary px-2 border-l border-border-color">
-                {user?.token_usage || 0}/
-                {user?.subscription?.max_tokens || 2000}
+                {localUser?.token_usage || 0}/
+                {localUser?.subscription?.max_tokens || 2000}
               </span>
             </div>
 
@@ -96,12 +113,12 @@ export const Header = () => {
                       theme === "light" ? "ring-black" : "ring-white"
                     }`}
                   >
-                    {user?.username?.charAt(0).toUpperCase() || "U"}
+                    {localUser?.username?.charAt(0).toUpperCase() || "U"}
                   </div>
                   {profilePicture && (
                     <img
                       src={profilePicture}
-                      alt={user?.username?.charAt(0).toUpperCase() || "U"}
+                      alt={localUser?.username?.charAt(0).toUpperCase() || "U"}
                       className={`absolute top-0 left-0 w-8 h-8 rounded-full ring-1 ring-offset-2 transition-all ${
                         theme === "light"
                           ? "ring-black hover:ring-accent-primary"
@@ -128,10 +145,10 @@ export const Header = () => {
                 >
                   <div className="px-4 py-2 border-b border-border-color">
                     <span className="block text-sm font-medium text-text-primary">
-                      {user?.username}
+                      {localUser?.username}
                     </span>
                     <span className="block text-sm text-text-secondary">
-                      {user?.email}
+                      {localUser?.email}
                     </span>
                   </div>
                   <button

@@ -172,6 +172,13 @@ export async function generateProject(message: string, id: string) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
+  const userStr = localStorage.getItem("user");
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    user.token_usage = (user.token_usage || 0) + 150;
+    localStorage.setItem("user", JSON.stringify(user));
+  }
+
   return response.json();
 }
 
@@ -204,6 +211,13 @@ export async function generateBackendRequirements(
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const userStr = localStorage.getItem("user");
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    user.token_usage = (user.token_usage || 0) + 100;
+    localStorage.setItem("user", JSON.stringify(user));
   }
 
   const reader = response.body?.getReader();
