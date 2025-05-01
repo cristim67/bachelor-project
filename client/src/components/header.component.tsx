@@ -1,12 +1,21 @@
 import { logout } from "../network/api_axios";
 import { useTheme } from "../contexts/theme_provider";
 import { useAuth } from "../contexts/auth_context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export const Header = () => {
   const { isLoggedIn, setIsLoggedIn, user } = useAuth();
   const { theme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.profile_picture) {
+      setProfilePicture(
+        localStorage.getItem("profile_picture") || user.profile_picture,
+      );
+    }
+  }, [user?.profile_picture, localStorage.getItem("profile_picture")]);
 
   const handleLogout = async () => {
     try {
@@ -81,35 +90,31 @@ export const Header = () => {
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="focus:outline-none"
               >
-                {user?.profile_picture ? (
-                  <img
-                    src={
-                      localStorage.getItem("profile_picture") ||
-                      user.profile_picture
-                    }
-                    alt={user.username?.charAt(0).toUpperCase() || "P"}
-                    className={`w-8 h-8 rounded-full ring-1 ring-offset-2 transition-all ${
-                      theme === "light"
-                        ? "ring-black hover:ring-accent-primary"
-                        : "ring-white hover:ring-accent-primary"
-                    }`}
-                    loading="lazy"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.style.display = "none";
-                      target.parentElement!.innerHTML = `<div class="w-8 h-8 rounded-full bg-accent-primary text-surface-color flex items-center justify-center font-medium ring-1 ring-offset-2 ${theme === "light" ? "ring-black" : "ring-white"}">${user.username?.charAt(0).toUpperCase() || "P"}</div>`;
-                    }}
-                  />
-                ) : (
+                <div className="relative">
                   <div
                     className={`w-8 h-8 rounded-full bg-accent-primary text-surface-color flex items-center justify-center font-medium ring-1 ring-offset-2 ${
                       theme === "light" ? "ring-black" : "ring-white"
                     }`}
                   >
-                    {user?.username?.charAt(0).toUpperCase() || "P"}
+                    {user?.username?.charAt(0).toUpperCase() || "U"}
                   </div>
-                )}
+                  {profilePicture && (
+                    <img
+                      src={profilePicture}
+                      alt={user?.username?.charAt(0).toUpperCase() || "U"}
+                      className={`absolute top-0 left-0 w-8 h-8 rounded-full ring-1 ring-offset-2 transition-all ${
+                        theme === "light"
+                          ? "ring-black hover:ring-accent-primary"
+                          : "ring-white hover:ring-accent-primary"
+                      }`}
+                      loading="lazy"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                      }}
+                    />
+                  )}
+                </div>
               </button>
 
               {showUserMenu && (

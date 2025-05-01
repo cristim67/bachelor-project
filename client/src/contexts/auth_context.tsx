@@ -45,21 +45,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const response = await getUser();
         setIsLoggedIn(true);
         if (response.user) {
-          // Get cached profile picture or use the new one
-          const cachedPicture = localStorage.getItem("profile_picture");
-          const userWithCachedPicture = {
-            ...response.user,
-            profile_picture: cachedPicture || response.user.profile_picture,
-          };
-          setUser(userWithCachedPicture);
-
-          // Update cache if we have a new picture
-          if (response.user.profile_picture && !cachedPicture) {
+          // Update cache with new profile picture if it exists
+          if (response.user.profile_picture) {
             localStorage.setItem(
               "profile_picture",
               response.user.profile_picture,
             );
           }
+          setUser(response.user);
         }
       } catch (error) {
         const axiosError = error as AxiosError;
@@ -77,6 +70,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     verifyAuth();
   }, []);
+
+  useEffect(() => {
+    if (user?.profile_picture) {
+      localStorage.setItem("profile_picture", user.profile_picture);
+    }
+  }, [user?.profile_picture]);
 
   return (
     <AuthContext.Provider
