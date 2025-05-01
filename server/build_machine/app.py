@@ -33,6 +33,11 @@ app = FastAPI(
 async def health():
     return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "ok"})
 
+@app.get("/test-genezio")
+async def test_genezio():
+    result = subprocess.run(["genezio", "login"], capture_output=True, text=True)
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "ok", "result": result.stdout})
+
 @app.post("/project-build")
 async def project_build(request: ProjectData, token: str = Depends(security)):
     presigned_url = request.presigned_url
