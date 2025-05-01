@@ -62,6 +62,28 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
     presigned_url = request.presigned_url
     print("Presigned URL:", presigned_url)
     try:
+        # genezio login
+        print("Running genezio login...")
+        login_result = subprocess.run(
+            ["genezio", "login", token],
+            capture_output=True,
+            text=True,
+            env={"CI": "true", **os.environ}
+        )
+        print("Login output:", login_result.stdout)
+        if login_result.stderr:
+            print("Login errors:", login_result.stderr)
+
+        # genezio account
+        print("Running genezio account...")
+        account_result = subprocess.run(["genezio", "account"], 
+                                     capture_output=True, 
+                                     text=True,
+                                     env={"CI": "true", **os.environ})
+        print("Account output:", account_result.stdout)
+        if account_result.stderr:
+            print("Account errors:", account_result.stderr)
+
         temp_dir = tempfile.mkdtemp() + str(uuid.uuid4())
         # download the project from the presigned url
         async with aiohttp.ClientSession() as session:
@@ -120,17 +142,6 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
         print("Cat genezio.yaml file:")
         with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
             print(f.read())
-        # genezio login
-        print("Running genezio login...")
-        login_result = subprocess.run(
-            ["genezio", "login", token],
-            capture_output=True,
-            text=True,
-            env={"CI": "true", **os.environ}
-        )
-        print("Login output:", login_result.stdout)
-        if login_result.stderr:
-            print("Login errors:", login_result.stderr)
 
         # after genezio analyze, we need to deploy the project
         print("Running genezio deploy...")
