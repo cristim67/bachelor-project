@@ -29,56 +29,6 @@ export const Home = () => {
     useSpeechRecognition();
 
   useEffect(() => {
-    // Check microphone permissions
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then(() => {
-        console.log("Microphone access granted");
-      })
-      .catch((error) => {
-        console.error("Microphone access denied:", error);
-        toast.error("Please allow microphone access to use voice recognition");
-      });
-  }, []);
-
-  const handleVoiceToggle = () => {
-    console.log("Voice toggle clicked, current state:", listening);
-
-    if (!browserSupportsSpeechRecognition) {
-      console.error("Browser does not support speech recognition");
-      toast.error("Your browser does not support speech recognition");
-      return;
-    }
-
-    if (listening) {
-      console.log("Stopping speech recognition");
-      SpeechRecognition.stopListening();
-      resetTranscript();
-    } else {
-      // Check microphone permissions only when trying to start voice recognition
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then(() => {
-          console.log("Microphone access granted");
-          SpeechRecognition.startListening({
-            continuous: true,
-            language: "en-US",
-            interimResults: true,
-          }).catch((error: Error) => {
-            console.error("Error starting speech recognition:", error);
-            toast.error("Failed to start speech recognition");
-          });
-        })
-        .catch((error) => {
-          console.error("Microphone access denied:", error);
-          toast.error(
-            "Please allow microphone access to use voice recognition",
-          );
-        });
-    }
-  };
-
-  useEffect(() => {
     const handleTyping = () => {
       const i = loopNum % placeholders_home.length;
       const fullText = placeholders_home[i];
@@ -212,6 +162,43 @@ export const Home = () => {
         textarea.scrollTop = textarea.scrollHeight;
       }
     }, 0);
+  };
+
+  const handleVoiceToggle = () => {
+    console.log("Voice toggle clicked, current state:", listening);
+
+    if (!browserSupportsSpeechRecognition) {
+      console.error("Browser does not support speech recognition");
+      toast.error("Your browser does not support speech recognition");
+      return;
+    }
+
+    if (listening) {
+      console.log("Stopping speech recognition");
+      SpeechRecognition.stopListening();
+      resetTranscript();
+    } else {
+      // Check microphone permissions only when trying to start voice recognition
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then(() => {
+          console.log("Microphone access granted");
+          SpeechRecognition.startListening({
+            continuous: true,
+            language: "en-US",
+            interimResults: true,
+          }).catch((error: Error) => {
+            console.error("Error starting speech recognition:", error);
+            toast.error("Failed to start speech recognition");
+          });
+        })
+        .catch((error) => {
+          console.error("Microphone access denied:", error);
+          toast.error(
+            "Please allow microphone access to use voice recognition",
+          );
+        });
+    }
   };
 
   return (
