@@ -23,7 +23,6 @@ class ProjectRepository:
 
         project = Project(
             idea=project_input.idea,
-            stack=project_input.stack,
             user_id=user_id,
             is_public=project_input.is_public,
             s3_folder_name=s3_folder_name,

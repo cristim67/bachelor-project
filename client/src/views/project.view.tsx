@@ -96,10 +96,6 @@ export const Project = () => {
           console.log("Project generation completed");
           setIsGeneratingProject(false);
 
-          // Add a delay and refresh after project generation
-          await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second delay
-          window.location.reload(); // Refresh the page
-
           // Add retry logic for S3 download
           let retryCount = 0;
           const maxRetries = 3;

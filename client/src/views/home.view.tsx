@@ -64,30 +64,12 @@ export const Home = () => {
       "project",
       JSON.stringify({
         prompt: prompt,
-        stack: {
-          apiType: "",
-          language: "",
-          framework: "",
-          database: "",
-          frontend: "",
-          css: "",
-          projectType: "",
-        },
         is_public: isPublic,
       }),
     );
 
     const response = await createProject({
       idea: prompt,
-      stack: {
-        apiType: "rest",
-        language: "python",
-        framework: "fastapi",
-        database: "postgresql",
-        frontend: "react",
-        css: "tailwind",
-        projectType: "fullstack",
-      },
       is_public: isPublic,
     });
 
