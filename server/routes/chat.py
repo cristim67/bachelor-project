@@ -319,6 +319,17 @@ async def project_generator(
             os.makedirs(history_dir, exist_ok=True)
             os.makedirs(code_dir, exist_ok=True)
 
+            # Check if conversation.jsonl exists from backend requirements
+            conversation_path = os.path.join(history_dir, "conversation.jsonl")
+            if not os.path.exists(conversation_path):
+                # Only create new conversation.jsonl if it doesn't exist
+                messages = [
+                    {"role": "user", "content": request_data.message},
+                ]
+                jsonl_content = "\n".join(json.dumps(msg) for msg in messages)
+                with open(conversation_path, "w") as f:
+                    f.write(jsonl_content)
+
             # Save the json_content as project.json
             with open(os.path.join(structure_dir, "project.json"), "w") as f:
                 json.dump(json_content, f, indent=2)
