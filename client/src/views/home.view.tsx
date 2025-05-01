@@ -177,28 +177,27 @@ export const Home = () => {
       console.log("Stopping speech recognition");
       SpeechRecognition.stopListening();
       resetTranscript();
-    } else {
-      // Check microphone permissions only when trying to start voice recognition
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then(() => {
-          console.log("Microphone access granted");
-          SpeechRecognition.startListening({
-            continuous: true,
-            language: "en-US",
-            interimResults: true,
-          }).catch((error: Error) => {
-            console.error("Error starting speech recognition:", error);
-            toast.error("Failed to start speech recognition");
-          });
-        })
-        .catch((error) => {
-          console.error("Microphone access denied:", error);
-          toast.error(
-            "Please allow microphone access to use voice recognition",
-          );
-        });
+      return;
     }
+
+    // Check microphone permissions only when trying to start voice recognition
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then(() => {
+        console.log("Microphone access granted");
+        SpeechRecognition.startListening({
+          continuous: true,
+          language: "en-US",
+          interimResults: true,
+        }).catch((error: Error) => {
+          console.error("Error starting speech recognition:", error);
+          toast.error("Failed to start speech recognition");
+        });
+      })
+      .catch((error) => {
+        console.error("Microphone access denied:", error);
+        toast.error("Please allow microphone access to use voice recognition");
+      });
   };
 
   return (
