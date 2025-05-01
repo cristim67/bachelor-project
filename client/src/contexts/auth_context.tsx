@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { getUser } from "../network/api_axios";
+import { AxiosError } from "axios";
 
 interface User {
   username: string;
@@ -60,7 +61,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             );
           }
         }
-      } catch {
+      } catch (error) {
+        const axiosError = error as AxiosError;
+        // Only handle 401 errors silently
+        if (axiosError.response?.status !== 401) {
+          console.error("Auth error:", error);
+        }
         setIsLoggedIn(false);
         setUser(null);
       } finally {

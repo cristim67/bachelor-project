@@ -32,7 +32,7 @@ instance.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && error.response.data.detail) {
+    if (error.response?.status !== 401 && error.response?.data?.detail) {
       toast.error(error.response.data.detail);
     }
     return Promise.reject(error);
@@ -44,7 +44,7 @@ buildMachineInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && error.response.data.detail) {
+    if (error.response?.status !== 401 && error.response?.data?.detail) {
       toast.error(error.response.data.detail);
     }
     return Promise.reject(error);
