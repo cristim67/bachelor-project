@@ -15,7 +15,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials
+from repository.auth import AuthRepository
 from repository.project import ProjectRepository
+from repository.session import SessionRepository
 from routes.utils import BearerToken
 from services.genezio_service import create_mongodb_uri, create_postgres_uri
 from services.s3_service import (
@@ -101,6 +103,26 @@ async def backend_requirements(
         project = await project_repository.get_project(
             id=request_data.project.projectId, session_token=credentials.credentials
         )
+
+        user_id = await SessionRepository.get_user_by_session_token(
+            session_token=credentials.credentials
+        )
+
+        user_repository = AuthRepository()
+        user = await user_repository.get_user(
+            id=user_id
+        )
+
+        subscription = user.subscription
+        max_tokens = subscription["max_tokens"]
+        token_usage = user.token_usage + 100
+
+        if token_usage >= max_tokens:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You have reached the maximum number of tokens")
+
+        # Update user token usage
+        user.token_usage = token_usage
+        await user.save()
 
         if not project:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
@@ -195,6 +217,26 @@ async def project_generator(
 
         if not project:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+        user_id = await SessionRepository.get_user_by_session_token(
+            session_token=credentials.credentials
+        )
+
+        user_repository = AuthRepository()
+        user = await user_repository.get_user(
+            id=user_id
+        )
+
+        subscription = user.subscription
+        max_tokens = subscription["max_tokens"]
+        token_usage = user.token_usage + 150
+
+        if token_usage >= max_tokens:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You have reached the maximum number of tokens")
+
+        # Update user token usage
+        user.token_usage = token_usage
+        await user.save()
 
         langfuse_session_id = None
 

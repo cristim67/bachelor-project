@@ -15,3 +15,10 @@ class User(Document):
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
     profile_picture: Optional[str] = None
+    token_usage: int = 0
+    subscription: dict = {
+        "name": "Hobby",
+        "description": "Hobby subscription",
+        "price": 0.0,
+        "max_tokens": 2000,
+    }

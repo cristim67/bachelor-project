@@ -255,3 +255,8 @@ export async function deployProject(presignedUrl: string) {
   });
   return response.data;
 }
+
+export async function getUser() {
+  const response = await instance.get("/v1/auth/user");
+  return response.data;
+}

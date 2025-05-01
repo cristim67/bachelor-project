@@ -110,3 +110,38 @@ async def google_login(google_login: GoogleLogin):
             "session_token": session_token,
         },
     )
+
+@router.get("/user")
+async def get_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        user_id = await SessionRepository.get_user_by_session_token(credentials.credentials)
+        if not user_id:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"code": status.HTTP_401_UNAUTHORIZED, "message": "Not authenticated"}
+            )
+            
+        user = await AuthRepository.get_user(user_id)
+        if not user:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"code": status.HTTP_404_NOT_FOUND, "message": "User not found"}
+            )
+
+        user_dict = {
+            "username": user.username,
+            "email": user.email,
+            "profile_picture": user.profile_picture,
+            "token_usage": user.token_usage,
+            "subscription": user.subscription
+        }
+        
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"code": status.HTTP_200_OK, "user": user_dict}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"code": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": str(e)}
+        )

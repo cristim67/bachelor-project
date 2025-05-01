@@ -9,13 +9,7 @@ from config.otp_email_template import (
     otp_notification_email_template,
 )
 from db.connection import db_connection
-from dtos.user import (
-    ForgotPassword,
-    GoogleLogin,
-    UserInput,
-    UserLogin,
-    UserUpdate,
-)
+from dtos.user import ForgotPassword, GoogleLogin, UserInput, UserLogin, UserUpdate
 from fastapi import HTTPException, status
 from google.auth.transport import requests
 from google.oauth2 import id_token
@@ -245,3 +239,10 @@ class AuthRepository:
 
         except ValueError:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Google token")
+
+    @staticmethod
+    async def get_user(id: str):
+        user = await User.find_one({"_id": PydanticObjectId(id)})
+        if not user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
+        return user

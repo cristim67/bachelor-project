@@ -67,3 +67,10 @@ class SessionRepository:
             await session.delete()
             return False
         return True
+
+    @staticmethod
+    async def get_user_by_session_token(session_token: str):
+        session = await ActiveSession.find_one({"session_token": session_token})
+        if not session:
+            return None
+        return session.user_id
