@@ -161,6 +161,14 @@ export const Home = () => {
   };
 
   const handleEnhance = async () => {
+    if (!isLoggedIn) {
+      toast.error("Please login to enhance your prompt");
+      setTimeout(() => {
+        navigate("/auth/login");
+      }, 1000);
+      return;
+    }
+
     if (!prompt.trim()) {
       toast.error("Please enter a prompt first");
       return;
