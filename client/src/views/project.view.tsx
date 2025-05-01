@@ -247,6 +247,19 @@ export const Project = () => {
       console.log("S3 check response:", s3Response);
       console.log("S3 presigned url:", s3Response.s3_info.s3_presigned_url);
 
+      // Check if project has deployment URL
+      const projectResponse = await getProject(id);
+      if (
+        projectResponse &&
+        projectResponse.project &&
+        projectResponse.project.deployment_url
+      ) {
+        setDeploymentUrls({
+          deployment_url: projectResponse.project.deployment_url,
+          database_uri: projectResponse.project.database_uri || "",
+        });
+      }
+
       if (s3Response && s3Response.s3_info) {
         if (!s3Response.s3_info.s3_presigned_url) {
           console.log(
@@ -1013,54 +1026,85 @@ export const Project = () => {
 
         {/* URLs Modal */}
         {showUrlsModal && deploymentUrls && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div
-              className={`w-full max-w-lg rounded-lg shadow-lg ${
-                theme === "light" ? "bg-white" : "bg-gray-800"
+              className={`w-full max-w-lg rounded-xl shadow-2xl ${
+                theme === "light"
+                  ? "bg-white border border-gray-200"
+                  : "bg-[#2f3136] border border-[#1e1f22]"
               }`}
             >
               <div className="p-6">
-                <h3
-                  className={`text-xl font-semibold mb-4 ${
-                    theme === "light" ? "text-black" : "text-white"
-                  }`}
-                >
-                  Deployment URLs
-                </h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3
+                    className={`text-base font-medium ${
+                      theme === "light" ? "text-gray-900" : "text-white"
+                    }`}
+                  >
+                    View URLs
+                  </h3>
+                  <button
+                    onClick={() => setShowUrlsModal(false)}
+                    className={`p-2 rounded-lg hover:bg-opacity-10 ${
+                      theme === "light" ? "hover:bg-gray-900" : "hover:bg-white"
+                    }`}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
                 <div className="space-y-4">
                   <div>
                     <label
-                      className={`block text-sm font-medium mb-1 ${
+                      className={`block text-[10px] font-medium mb-1 ${
                         theme === "light" ? "text-gray-700" : "text-gray-300"
                       }`}
                     >
                       Deployment URL
                     </label>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={deploymentUrls.deployment_url}
-                        className={`w-full px-3 py-2 rounded border ${
+                      <div
+                        className={`flex-1 px-3 py-2 rounded-lg border min-w-0 ${
                           theme === "light"
-                            ? "bg-gray-50 text-gray-900 border-gray-300"
-                            : "bg-gray-700 text-white border-gray-600"
+                            ? "bg-gray-50 text-gray-900 border-gray-200"
+                            : "bg-[#383a40] text-gray-200 border-[#1e1f22]"
                         }`}
-                      />
+                      >
+                        <a
+                          href={deploymentUrls.deployment_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline text-xs block truncate"
+                        >
+                          {deploymentUrls.deployment_url}
+                        </a>
+                      </div>
                       <button
                         onClick={() =>
                           navigator.clipboard.writeText(
                             deploymentUrls.deployment_url,
                           )
                         }
-                        className={`p-2 rounded ${
+                        className={`p-2 rounded-lg hover:bg-opacity-10 ${
                           theme === "light"
-                            ? "hover:bg-gray-100"
-                            : "hover:bg-gray-700"
+                            ? "hover:bg-gray-900"
+                            : "hover:bg-white"
                         }`}
                       >
                         <svg
-                          className="w-5 h-5"
+                          className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1075,39 +1119,46 @@ export const Project = () => {
                       </button>
                     </div>
                   </div>
+
                   <div>
                     <label
-                      className={`block text-sm font-medium mb-1 ${
+                      className={`block text-[10px] font-medium mb-1 ${
                         theme === "light" ? "text-gray-700" : "text-gray-300"
                       }`}
                     >
                       Database URI
                     </label>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={deploymentUrls.database_uri}
-                        className={`w-full px-3 py-2 rounded border ${
+                      <div
+                        className={`flex-1 px-3 py-2 rounded-lg border min-w-0 ${
                           theme === "light"
-                            ? "bg-gray-50 text-gray-900 border-gray-300"
-                            : "bg-gray-700 text-white border-gray-600"
+                            ? "bg-gray-50 text-gray-900 border-gray-200"
+                            : "bg-[#383a40] text-gray-200 border-[#1e1f22]"
                         }`}
-                      />
+                      >
+                        <a
+                          href={deploymentUrls.database_uri}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`hover:underline text-xs block truncate`}
+                        >
+                          {deploymentUrls.database_uri}
+                        </a>
+                      </div>
                       <button
                         onClick={() =>
                           navigator.clipboard.writeText(
                             deploymentUrls.database_uri,
                           )
                         }
-                        className={`p-2 rounded ${
+                        className={`p-2 rounded-lg hover:bg-opacity-10 ${
                           theme === "light"
-                            ? "hover:bg-gray-100"
-                            : "hover:bg-gray-700"
+                            ? "hover:bg-gray-900"
+                            : "hover:bg-white"
                         }`}
                       >
                         <svg
-                          className="w-5 h-5"
+                          className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1123,16 +1174,29 @@ export const Project = () => {
                     </div>
                   </div>
                 </div>
-                <div className="mt-6 flex justify-end">
+
+                <div className="mt-8 flex justify-end gap-3">
                   <button
                     onClick={() => setShowUrlsModal(false)}
-                    className={`px-4 py-2 rounded-md ${
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       theme === "light"
-                        ? "bg-black text-white hover:bg-gray-800"
-                        : "bg-white text-black hover:bg-gray-100"
+                        ? "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
+                        : "bg-[#383a40] text-gray-200 border border-[#1e1f22] hover:bg-[#404249]"
                     }`}
                   >
                     Close
+                  </button>
+                  <button
+                    onClick={() =>
+                      window.open(deploymentUrls.deployment_url, "_blank")
+                    }
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      theme === "light"
+                        ? "bg-gray-900 text-white hover:bg-gray-800"
+                        : "bg-white text-gray-900 hover:bg-gray-100"
+                    }`}
+                  >
+                    Open App
                   </button>
                 </div>
               </div>
