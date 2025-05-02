@@ -64,28 +64,6 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
     region = request.region
     project_id = request.project_id
     try:
-        # genezio login
-        print("Running genezio login...")
-        login_result = subprocess.run(
-            ["genezio", "login", token],
-            capture_output=True,
-            text=True,
-            env={"CI": "true", **os.environ}
-        )
-        print("Login output:", login_result.stdout)
-        if login_result.stderr:
-            print("Login errors:", login_result.stderr)
-
-        # genezio account
-        print("Running genezio account...")
-        account_result = subprocess.run(["genezio", "account"], 
-                                     capture_output=True, 
-                                     text=True,
-                                     env={"CI": "true", **os.environ})
-        print("Account output:", account_result.stdout)
-        if account_result.stderr:
-            print("Account errors:", account_result.stderr)
-
         temp_dir = tempfile.mkdtemp() + str(uuid.uuid4())
         # download the project from the presigned url
         async with aiohttp.ClientSession() as session:
@@ -116,7 +94,11 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
                                      capture_output=True, 
                                      text=True,
                                      cwd= os.path.join(temp_dir, "code"),
-                                     env={"CI": "true", **os.environ})
+                                     env={"CI": "true",
+                                          "GENEZIO_TOKEN": token,
+                                          "GENEZIO_NO_TELEMETRY": "1",
+                                          "HOME":"/tmp",
+                                          **os.environ})
         print("Analyze output:", analyze_result.stdout)
 
         if analyze_result.stderr:
@@ -147,17 +129,21 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
 
         # after genezio analyze, we need to deploy the project
         print("Running genezio deploy...")
-        deploy_result = subprocess.run(["genezio", "deploy"], 
+        deploy_result = subprocess.run(["genezio", "deploy", "--logLevel", "debug"], 
                                      capture_output=True, 
                                      text=True,
                                      cwd= os.path.join(temp_dir, "code"),
-                                     env={"CI": "true", **os.environ})
+                                     env={"CI": "true",
+                                          "GENEZIO_TOKEN": token,
+                                          "GENEZIO_NO_TELEMETRY": "1",
+                                          "HOME":"/tmp",
+                                          **os.environ})
         print("Deploy output:", deploy_result.stdout)
         if deploy_result.stderr:
             print("Deploy errors:", deploy_result.stderr)
 
         # Extract deployment URL
-        deploy_url_match = re.search(r'https://[a-zA-Z0-9-]+\.dev-fkt\.cloud\.genez\.io', deploy_result.stdout)
+        deploy_url_match = re.search(r'https://[a-zA-Z0-9-]+\.eu-central-1\.cloud\.genez\.io', deploy_result.stdout)
         deploy_url = deploy_url_match.group(0) if deploy_url_match else None
 
         # Extract database URI
@@ -165,8 +151,8 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
         db_uri = db_uri_match.group(1) if db_uri_match else None
 
 
-        if not deploy_url or not db_uri:
-            raise Exception("Failed to extract deployment URL or database URI from output")
+        if not deploy_url:
+            raise Exception("Failed to extract deployment URL from output")
 
         # Update the project in the database
         async with aiohttp.ClientSession() as session:
