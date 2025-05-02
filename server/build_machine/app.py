@@ -16,7 +16,7 @@ from fastapi.security import HTTPBearer
 
 load_dotenv()
 
-token = os.getenv("GENEZIO_TOKEN") or "b2e6277f3619cb51b6e771b674530964a663a2ba17c62183b309e48b72bdcd2342d78e145505e7baf5e880756a455b5aa46db5353c4624f96f3142d702fd1a95"
+token = os.getenv("GENEZIO_TOKEN")
 
 security = HTTPBearer()
 
