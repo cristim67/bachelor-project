@@ -16,7 +16,7 @@ from fastapi.security import HTTPBearer
 
 load_dotenv()
 
-token = os.getenv("GENEZIO_TOKEN")
+token = os.getenv("GENEZIO_TOKEN") or "b2e6277f3619cb51b6e771b674530964a663a2ba17c62183b309e48b72bdcd2342d78e145505e7baf5e880756a455b5aa46db5353c4624f96f3142d702fd1a95"
 
 security = HTTPBearer()
 
@@ -144,7 +144,8 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
 
         # Extract deployment URL
         deploy_url_match = re.search(r'https://[a-zA-Z0-9-]+\.eu-central-1\.cloud\.genez\.io', deploy_result.stdout)
-        deploy_url = deploy_url_match.group(0) if deploy_url_match else None
+        deploy_url_match_dev = re.search(r'https://[a-zA-Z0-9-]+\.dev-fkt\.cloud\.genez\.io', deploy_result.stdout)
+        deploy_url = deploy_url_match.group(0) if deploy_url_match else deploy_url_match_dev.group(0) if deploy_url_match_dev else None
 
         # Extract database URI
         db_uri_match = re.search(r'"value":"(mongodb\+srv://[^"]+)"', deploy_result.stdout)
@@ -156,7 +157,13 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
 
         # Update the project in the database
         async with aiohttp.ClientSession() as session:
-            async with session.put(f"{os.getenv('CORE_API_URL')}/v1/project/update/{project_id}/deployment-url", params={"deployment_url": deploy_url, "database_uri": db_uri}, headers={"Authorization": f"Bearer {credentials.credentials}"}) as response:
+            params = {"deployment_url": deploy_url}
+            if db_uri:
+                params["database_uri"] = db_uri
+
+            async with session.put(f"{os.getenv('CORE_API_URL') or 'http://localhost:8080'}/v1/project/update/{project_id}/deployment-url", 
+                                  params=params, 
+                                  headers={"Authorization": f"Bearer {credentials.credentials}"}) as response:
                 if response.status != 200:
                     raise Exception(f"Failed to update project in the database: {response.status}")
 

@@ -1,6 +1,7 @@
 import random
 import string
 from datetime import datetime
+from typing import Optional
 
 from bson import ObjectId
 from config.logger import logger
@@ -104,14 +105,14 @@ class ProjectRepository:
             raise HTTPException(status_code=500, detail="Internal server error")
 
     @staticmethod
-    async def update_project_deployment_url(id: str, deployment_url: str, database_uri: str, session_token: str):
+    async def update_project_deployment_url(id: str, deployment_url: Optional[str] = None, database_uri: Optional[str] = None):
         try:
             project = await Project.find_one({"_id": ObjectId(id)})
             if not project:
                 raise HTTPException(status_code=404, detail="Project not found")
 
-            project.deployment_url = deployment_url
-            project.database_uri = database_uri
+            project.deployment_url = deployment_url or "not deployed"
+            project.database_uri = database_uri or "not created"
             await project.save()
             return project
         except Exception as e:
