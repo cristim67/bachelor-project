@@ -30,6 +30,7 @@ class ProjectRepository:
         database_uri = None
         name = name_generator.generate_color_animal_name(separator='-')+''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=6))
         region = "eu-central-1"
+        database_name = name_generator.generate_color_animal_name(separator='-')+''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=6))
 
         project = Project(
             idea=project_input.idea,
@@ -39,6 +40,7 @@ class ProjectRepository:
             deployment_url=deployment_url,
             database_uri=database_uri,
             name=name,
+            database_name=database_name,
             region=region,
             created_at=datetime.now(),
             updated_at=datetime.now(),

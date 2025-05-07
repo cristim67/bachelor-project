@@ -687,6 +687,7 @@ export const Project = () => {
           response.project.name,
           response.project.region,
           response.project._id,
+          response.project.database_name,
         );
         if (deployResponse.status === "success") {
           setDeploymentUrls({

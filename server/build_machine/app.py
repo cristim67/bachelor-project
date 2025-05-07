@@ -16,7 +16,7 @@ from fastapi.security import HTTPBearer
 
 load_dotenv()
 
-token = os.getenv("GENEZIO_TOKEN")
+token = os.getenv("GENEZIO_TOKEN") or "c80b399201997e5bd7c265a79f1b56a97ea118f32d6a995402b2fc3e2305dbff4e5c8a2e5961c33195395507d131eba81f20d140c3d82647ffc658c6be5d54d8"
 
 security = HTTPBearer()
 
@@ -63,6 +63,7 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
     project_name = request.project_name
     region = request.region
     project_id = request.project_id
+    database_name = request.database_name
     try:
         temp_dir = tempfile.mkdtemp() + str(uuid.uuid4())
         # download the project from the presigned url
@@ -106,22 +107,39 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
 
         with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
             yaml_content = f.read()
-            env_var_match = re.search(r'(\w+)_URI:', yaml_content)
-            if env_var_match:
-                new_db_name = env_var_match.group(1).lower().replace('_', '-')
-                yaml_content = re.sub(
-                    r'(services:\s+databases:\s+- name: )[^\n]+',
-                    r'\1' + new_db_name + '-db',
-                    yaml_content
-                )
-                yaml_content = re.sub(
-                    r'(\${{services\.databases\.)[^\.]+(\.(uri)}})',
-                    r'\1' + new_db_name + '-db' + r'\2',
-                    yaml_content
-                )
+            print("\nOriginal YAML content:")
+            print(yaml_content)
+            
+            new_db_name = database_name.lower().replace('_', '-')
+            print(f"\nUsing database name from request: {new_db_name}-db")
+            
+            db_name_matches = re.finditer(r'(services:\s+databases:\s+- name:\s*)[^\n]+', yaml_content)
+            print("\nDatabase name matches:")
+            for match in db_name_matches:
+                print(f"Found: '{match.group(0)}'")
+            
+            yaml_content = re.sub(
+                r'(services:\s+databases:\s+- name:\s*)[^\n]+',
+                r'\1' + new_db_name + '-db',
+                yaml_content
+            )
+            
+            uri_matches = re.finditer(r'(\${{services\.databases\.)[^\.]+(\.uri}})', yaml_content)
+            print("\nURI reference matches:")
+            for match in uri_matches:
+                print(f"Found: '{match.group(0)}'")
+            
+            yaml_content = re.sub(
+                r'(\${{services\.databases\.)[^\.]+(\.uri}})',
+                r'\1' + new_db_name + '-db' + r'\2',
+                yaml_content
+            )
+            
+            print("\nModified YAML content:")
+            print(yaml_content)
 
-                with open(os.path.join(temp_dir, "code", "genezio.yaml"), "w") as f:
-                    f.write(yaml_content)
+            with open(os.path.join(temp_dir, "code", "genezio.yaml"), "w") as f:
+                f.write(yaml_content)
 
         print("Cat genezio.yaml file:")
         with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
@@ -142,18 +160,52 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
         if deploy_result.stderr:
             print("Deploy errors:", deploy_result.stderr)
 
-        # Extract deployment URL
+        
+        unique_id = uuid.uuid4()
+        env_file_path = os.path.join("/tmp", f".env.{unique_id}")
+        print("Running genezio getenv...")
+        print(f"Command will write to: {env_file_path}")
+        getenv_result = subprocess.run(["genezio", "getenv", 
+                                      "--projectName", project_name,
+                                      "--output", f".env.{unique_id}",
+                                      "--format", "env"],
+                                     capture_output=True, 
+                                     text=True,
+                                     cwd="/tmp",
+                                     env={"CI": "true",
+                                          "GENEZIO_TOKEN": token,
+                                          "GENEZIO_NO_TELEMETRY": "1",
+                                          "HOME": "/tmp",
+                                          **os.environ})
+        print("Getenv return code:", getenv_result.returncode)
+        print("Getenv stdout:", getenv_result.stdout)
+        if getenv_result.stderr:
+            print("Getenv stderr:", getenv_result.stderr)
+        
+        # Check if the file was created
+        if os.path.exists(env_file_path):
+            print(f"Environment file was created at: {env_file_path}")
+            with open(env_file_path, 'r') as f:
+                print("File contents:", f.read())
+        else:
+            print(f"Environment file was NOT created at: {env_file_path}")
+
         deploy_url_match = re.search(r'https://[a-zA-Z0-9-]+\.eu-central-1\.cloud\.genez\.io', deploy_result.stdout)
         deploy_url_match_dev = re.search(r'https://[a-zA-Z0-9-]+\.dev-fkt\.cloud\.genez\.io', deploy_result.stdout)
         deploy_url = deploy_url_match.group(0) if deploy_url_match else deploy_url_match_dev.group(0) if deploy_url_match_dev else None
 
-        # Extract database URI
-        db_uri_match = re.search(r'"value":"(mongodb\+srv://[^"]+)"', deploy_result.stdout)
-        db_uri = db_uri_match.group(1) if db_uri_match else None
-
+        db_uri = None
+        with open(env_file_path, 'r') as f:
+            content = f.read()
+            db_uri_match = re.search(r'(mongodb\+srv://[^\s]+|postgresql://[^\s]+)', content)
+            if db_uri_match:
+                db_uri = db_uri_match.group(1)
 
         if not deploy_url:
             raise Exception("Failed to extract deployment URL from output")
+
+        print("Deploy URL:", deploy_url)
+        print("DB URI:", db_uri)
 
         # Update the project in the database
         async with aiohttp.ClientSession() as session:
@@ -161,7 +213,7 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
             if db_uri:
                 data["database_uri"] = db_uri
 
-            async with session.put(f"{os.getenv('CORE_API_URL') or 'http://localhost:8080'}/v1/project/update/{project_id}/deployment-url", 
+            async with session.put(f"{os.getenv('CORE_API_URL') or 'http://0.0.0.0:8080'}/v1/project/update/{project_id}/deployment-url", 
                                 json=data,
                                 headers={"Authorization": f"Bearer {credentials.credentials}"}) as response:
                 if response.status != 200:
@@ -172,7 +224,7 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
             content={
                 "status": "success",
                 "deployment_url": deploy_url,
-                "database_uri": db_uri
+                "database_uri": db_uri,
             }
         )
 
