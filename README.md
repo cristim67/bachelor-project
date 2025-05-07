@@ -2,6 +2,12 @@
 
 A web application built with FastAPI and React, implementing an advanced AI agent system with project management and generating code capabilities. The system features multiple specialized agents working together to provide intelligent assistance and project management.
 
+## 📊 System Architecture
+
+![System Architecture](readme-images/flow.svg)
+
+The diagram above illustrates the system's architecture and data flow, showing how different components interact to provide a seamless experience.
+
 ## 🚀 Features
 
 ### Backend (FastAPI)
@@ -55,6 +61,31 @@ A web application built with FastAPI and React, implementing an advanced AI agen
 - Google OAuth integration
 
 ## 🏗️ Technical Architecture
+
+### System Components
+1. **Frontend Layer**
+   - React-based user interface
+   - Real-time updates via SSE
+   - Secure authentication flow
+   - Project management dashboard
+
+2. **Backend Layer**
+   - FastAPI server
+   - Agent orchestration
+   - Database management
+   - File storage handling
+
+3. **AI Layer**
+   - Multiple specialized agents
+   - LLM integration
+   - Prompt management
+   - Response streaming
+
+4. **Infrastructure Layer**
+   - AWS services integration
+   - Database provisioning
+   - Container orchestration
+   - CDN distribution
 
 ### Backend Technologies
 - **Framework**: FastAPI (Python 3.13)
@@ -186,3 +217,4 @@ A web application built with FastAPI and React, implementing an advanced AI agen
         ├── Connection String Generation
         └── Database Setup
 ```
+
