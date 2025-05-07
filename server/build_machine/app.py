@@ -1,8 +1,11 @@
+import glob
 import io
 import os
 import re
+import shutil
 import subprocess
 import tempfile
+import time
 import uuid
 import zipfile
 
@@ -16,7 +19,7 @@ from fastapi.security import HTTPBearer
 
 load_dotenv()
 
-token = os.getenv("GENEZIO_TOKEN") or "c80b399201997e5bd7c265a79f1b56a97ea118f32d6a995402b2fc3e2305dbff4e5c8a2e5961c33195395507d131eba81f20d140c3d82647ffc658c6be5d54d8"
+token = os.getenv("GENEZIO_TOKEN")
 
 security = HTTPBearer()
 
@@ -57,6 +60,27 @@ async def genezio_login():
         print("Account errors:", result.stderr)
     return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "ok", "result": result.stdout})
 
+def cleanup_tmp():
+    """Clean up /tmp directory."""
+    try:
+        genezio_tmp = "/tmp/genezio-*"
+        for dir_path in glob.glob(genezio_tmp):
+            try:
+                shutil.rmtree(dir_path)
+                print(f"Cleaned up genezio temp dir: {dir_path}")
+            except Exception as e:
+                print(f"Error cleaning up {dir_path}: {str(e)}")
+
+        app_tmp = "/tmp/tmp*"
+        for dir_path in glob.glob(app_tmp):
+            try:
+                shutil.rmtree(dir_path)
+                print(f"Cleaned up app temp dir: {dir_path}")
+            except Exception as e:
+                print(f"Error cleaning up {dir_path}: {str(e)}")
+    except Exception as e:
+        print(f"Error during cleanup: {str(e)}")
+
 @app.post("/project-build")
 async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(security)):
     presigned_url = request.presigned_url
@@ -64,178 +88,200 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
     region = request.region
     project_id = request.project_id
     database_name = request.database_name
-    try:
-        temp_dir = tempfile.mkdtemp() + str(uuid.uuid4())
-        # download the project from the presigned url
-        async with aiohttp.ClientSession() as session:
-            async with session.get(presigned_url) as response:
-                if response.status != 200:
-                    raise Exception(f"Failed to download from S3: {response.status}")
-                project_zip = await response.read()
     
-        # unzip the project
-        with zipfile.ZipFile(io.BytesIO(project_zip), "r") as zip_ref:
-            zip_ref.extractall(temp_dir)
-
-        # unzip the code.zip file
-        code_zip_path = os.path.join(temp_dir, "code", "code.zip")
-        with zipfile.ZipFile(code_zip_path, "r") as code_zip_ref:
-            code_zip_ref.extractall(os.path.join(temp_dir, "code"))
-
-        # print the project directory tree
-        print("Project directory tree after unzip:")
-        tree_result = subprocess.run(["tree", temp_dir, "-L", "2"], capture_output=True, text=True, env={"CI": "true", **os.environ})
-        print(tree_result.stdout)
-        if tree_result.stderr:
-            print("Tree errors:", tree_result.stderr)
+    max_retries = 3
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        try:
+            cleanup_tmp()
+            
+            temp_dir = tempfile.mkdtemp() + str(uuid.uuid4())
+            async with aiohttp.ClientSession() as session:
+                async with session.get(presigned_url) as response:
+                    if response.status != 200:
+                        raise Exception(f"Failed to download from S3: {response.status}")
+                    project_zip = await response.read()
         
-        # genezio analyze 
-        print("Running genezio analyze...")
-        analyze_result = subprocess.run(["genezio", "analyze", "--name", project_name, "--region", region], 
-                                     capture_output=True, 
-                                     text=True,
-                                     cwd= os.path.join(temp_dir, "code"),
-                                     env={"CI": "true",
-                                          "GENEZIO_TOKEN": token,
-                                          "GENEZIO_NO_TELEMETRY": "1",
-                                          "HOME":"/tmp",
-                                          **os.environ})
-        print("Analyze output:", analyze_result.stdout)
+            with zipfile.ZipFile(io.BytesIO(project_zip), "r") as zip_ref:
+                zip_ref.extractall(temp_dir)
 
-        if analyze_result.stderr:
-            print("Analyze errors:", analyze_result.stderr)
+            code_zip_path = os.path.join(temp_dir, "code", "code.zip")
+            with zipfile.ZipFile(code_zip_path, "r") as code_zip_ref:
+                code_zip_ref.extractall(os.path.join(temp_dir, "code"))
 
-        with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
-            yaml_content = f.read()
-            print("\nOriginal YAML content:")
-            print(yaml_content)
-            
-            # Use database_name directly since it's already in the correct format
-            print(f"\nUsing database name from request: {database_name}")
-            
-            db_name_matches = re.finditer(r'(services:\s+databases:\s+- name:\s*)[^\n]+', yaml_content)
-            print("\nDatabase name matches:")
-            for match in db_name_matches:
-                print(f"Found: '{match.group(0)}'")
-            
-            yaml_content = re.sub(
-                r'(services:\s+databases:\s+- name:\s*)[^\n]+',
-                r'\1' + database_name,
-                yaml_content
-            )
-            
-            uri_matches = re.finditer(r'(\${{services\.databases\.)[^\.]+(\.uri}})', yaml_content)
-            print("\nURI reference matches:")
-            for match in uri_matches:
-                print(f"Found: '{match.group(0)}'")
-            
-            yaml_content = re.sub(
-                r'(\${{services\.databases\.)[^\.]+(\.uri}})',
-                r'\1' + database_name + r'\2',
-                yaml_content
-            )
-            
-            print("\nModified YAML content:")
-            print(yaml_content)
-
-            with open(os.path.join(temp_dir, "code", "genezio.yaml"), "w") as f:
-                f.write(yaml_content)
-
-        print("Cat genezio.yaml file:")
-        with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
-            print(f.read())
-
-        # after genezio analyze, we need to deploy the project
-        print("Running genezio deploy...")
-        deploy_result = subprocess.run(["genezio", "deploy", "--logLevel", "debug"], 
-                                     capture_output=True, 
-                                     text=True,
-                                     cwd= os.path.join(temp_dir, "code"),
-                                     env={"CI": "true",
-                                          "GENEZIO_TOKEN": token,
-                                          "GENEZIO_NO_TELEMETRY": "1",
-                                          "HOME":"/tmp",
-                                          **os.environ})
-        print("Deploy output:", deploy_result.stdout)
-        if deploy_result.stderr:
-            print("Deploy errors:", deploy_result.stderr)
-
+            print("Project directory tree after unzip:")
+            tree_result = subprocess.run(["tree", temp_dir, "-L", "2"], capture_output=True, text=True, env={"CI": "true", **os.environ})
+            print(tree_result.stdout)
+            if tree_result.stderr:
+                print("Tree errors:", tree_result.stderr)
         
-        unique_id = uuid.uuid4()
-        env_file_path = os.path.join("/tmp", f".env.{unique_id}")
-        print("Running genezio getenv...")
-        print(f"Command will write to: {env_file_path}")
-        getenv_result = subprocess.run(["genezio", "getenv", 
-                                      "--projectName", project_name,
-                                      "--output", f".env.{unique_id}",
-                                      "--format", "env"],
-                                     capture_output=True, 
-                                     text=True,
-                                     cwd="/tmp",
-                                     env={"CI": "true",
-                                          "GENEZIO_TOKEN": token,
-                                          "GENEZIO_NO_TELEMETRY": "1",
-                                          "HOME": "/tmp",
-                                          **os.environ})
-        print("Getenv return code:", getenv_result.returncode)
-        print("Getenv stdout:", getenv_result.stdout)
-        if getenv_result.stderr:
-            print("Getenv stderr:", getenv_result.stderr)
-        
-        # Check if the file was created
-        if os.path.exists(env_file_path):
-            print(f"Environment file was created at: {env_file_path}")
+            print("Running genezio analyze...")
+            analyze_result = subprocess.run(["genezio", "analyze", "--name", project_name, "--region", region], 
+                                         capture_output=True, 
+                                         text=True,
+                                         cwd= os.path.join(temp_dir, "code"),
+                                         env={"CI": "true",
+                                              "GENEZIO_TOKEN": token,
+                                              "GENEZIO_NO_TELEMETRY": "1",
+                                              "HOME":"/tmp",
+                                              **os.environ})
+            print("Analyze output:", analyze_result.stdout)
+
+            if analyze_result.stderr:
+                print("Analyze errors:", analyze_result.stderr)
+
+            with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
+                yaml_content = f.read()
+                print("\nOriginal YAML content:")
+                print(yaml_content)
+                
+                print(f"\nUsing database name from request: {database_name}")
+                
+                db_name_matches = re.finditer(r'(services:\s+databases:\s+- name:\s*)[^\n]+', yaml_content)
+                print("\nDatabase name matches:")
+                for match in db_name_matches:
+                    print(f"Found: '{match.group(0)}'")
+                
+                yaml_content = re.sub(
+                    r'(services:\s+databases:\s+- name:\s*)[^\n]+',
+                    r'\1' + database_name,
+                    yaml_content
+                )
+                
+                uri_matches = re.finditer(r'(\${{services\.databases\.)[^\.]+(\.uri}})', yaml_content)
+                print("\nURI reference matches:")
+                for match in uri_matches:
+                    print(f"Found: '{match.group(0)}'")
+                
+                yaml_content = re.sub(
+                    r'(\${{services\.databases\.)[^\.]+(\.uri}})',
+                    r'\1' + database_name + r'\2',
+                    yaml_content
+                )
+                
+                print("\nModified YAML content:")
+                print(yaml_content)
+
+                with open(os.path.join(temp_dir, "code", "genezio.yaml"), "w") as f:
+                    f.write(yaml_content)
+
+            print("Cat genezio.yaml file:")
+            with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
+                print(f.read())
+
+            print("Running genezio deploy...")
+            while retry_count < max_retries:
+                deploy_result = subprocess.run(["genezio", "deploy", "--logLevel", "debug"], 
+                                             capture_output=True, 
+                                             text=True,
+                                             cwd= os.path.join(temp_dir, "code"),
+                                             env={"CI": "true",
+                                                  "GENEZIO_TOKEN": token,
+                                                  "GENEZIO_NO_TELEMETRY": "1",
+                                                  "HOME":"/tmp",
+                                                  **os.environ})
+                print("Deploy output:", deploy_result.stdout)
+                if deploy_result.stderr:
+                    print("Deploy errors:", deploy_result.stderr)
+                
+                if "ENOSPC" in deploy_result.stdout or "ENOSPC" in deploy_result.stderr:
+                    if retry_count < max_retries - 1:
+                        print("No space left on device. Cleaning /tmp and retrying...")
+                        cleanup_tmp()
+                        retry_count += 1
+                        time.sleep(2) 
+                        continue
+                    else:
+                        raise Exception("No space left on device after multiple retries")
+                
+                break
+
+            unique_id = uuid.uuid4()
+            env_file_path = os.path.join("/tmp", f".env.{unique_id}")
+            print("Running genezio getenv...")
+            print(f"Command will write to: {env_file_path}")
+            getenv_result = subprocess.run(["genezio", "getenv", 
+                                          "--projectName", project_name,
+                                          "--output", f".env.{unique_id}",
+                                          "--format", "env"],
+                                         capture_output=True, 
+                                         text=True,
+                                         cwd="/tmp",
+                                         env={"CI": "true",
+                                              "GENEZIO_TOKEN": token,
+                                              "GENEZIO_NO_TELEMETRY": "1",
+                                              "HOME": "/tmp",
+                                              **os.environ})
+            print("Getenv return code:", getenv_result.returncode)
+            print("Getenv stdout:", getenv_result.stdout)
+            if getenv_result.stderr:
+                print("Getenv stderr:", getenv_result.stderr)
+            
+            if os.path.exists(env_file_path):
+                print(f"Environment file was created at: {env_file_path}")
+                with open(env_file_path, 'r') as f:
+                    print("File contents:", f.read())
+            else:
+                print(f"Environment file was NOT created at: {env_file_path}")
+
+            deploy_url_match = re.search(r'https://[a-zA-Z0-9-]+\.eu-central-1\.cloud\.genez\.io', deploy_result.stdout)
+            deploy_url_match_dev = re.search(r'https://[a-zA-Z0-9-]+\.dev-fkt\.cloud\.genez\.io', deploy_result.stdout)
+            deploy_url = deploy_url_match.group(0) if deploy_url_match else deploy_url_match_dev.group(0) if deploy_url_match_dev else None
+
+            db_uri = None
             with open(env_file_path, 'r') as f:
-                print("File contents:", f.read())
-        else:
-            print(f"Environment file was NOT created at: {env_file_path}")
+                content = f.read()
+                db_uri_match = re.search(r'(mongodb\+srv://[^\s]+|postgresql://[^\s]+)', content)
+                if db_uri_match:
+                    db_uri = db_uri_match.group(1)
 
-        deploy_url_match = re.search(r'https://[a-zA-Z0-9-]+\.eu-central-1\.cloud\.genez\.io', deploy_result.stdout)
-        deploy_url_match_dev = re.search(r'https://[a-zA-Z0-9-]+\.dev-fkt\.cloud\.genez\.io', deploy_result.stdout)
-        deploy_url = deploy_url_match.group(0) if deploy_url_match else deploy_url_match_dev.group(0) if deploy_url_match_dev else None
+            if not deploy_url:
+                raise Exception("Failed to extract deployment URL from output")
 
-        db_uri = None
-        with open(env_file_path, 'r') as f:
-            content = f.read()
-            db_uri_match = re.search(r'(mongodb\+srv://[^\s]+|postgresql://[^\s]+)', content)
-            if db_uri_match:
-                db_uri = db_uri_match.group(1)
+            print("Deploy URL:", deploy_url)
+            print("DB URI:", db_uri)
 
-        if not deploy_url:
-            raise Exception("Failed to extract deployment URL from output")
+            async with aiohttp.ClientSession() as session:
+                data = {"deployment_url": deploy_url}
+                if db_uri:
+                    data["database_uri"] = db_uri
 
-        print("Deploy URL:", deploy_url)
-        print("DB URI:", db_uri)
+                async with session.put(f"{os.getenv('CORE_API_URL') or 'http://0.0.0.0:8080'}/v1/project/update/{project_id}/deployment-url", 
+                                    json=data,
+                                    headers={"Authorization": f"Bearer {credentials.credentials}"}) as response:
+                    if response.status != 200:
+                        raise Exception(f"Failed to update project in the database: {response.status}")
 
-        # Update the project in the database
-        async with aiohttp.ClientSession() as session:
-            data = {"deployment_url": deploy_url}
-            if db_uri:
-                data["database_uri"] = db_uri
+            return JSONResponse(
+                status_code=status.HTTP_200_OK, 
+                content={
+                    "status": "success",
+                    "deployment_url": deploy_url,
+                    "database_uri": db_uri,
+                }
+            )
 
-            async with session.put(f"{os.getenv('CORE_API_URL') or 'http://0.0.0.0:8080'}/v1/project/update/{project_id}/deployment-url", 
-                                json=data,
-                                headers={"Authorization": f"Bearer {credentials.credentials}"}) as response:
-                if response.status != 200:
-                    raise Exception(f"Failed to update project in the database: {response.status}")
-
-        return JSONResponse(
-            status_code=status.HTTP_200_OK, 
-            content={
-                "status": "success",
-                "deployment_url": deploy_url,
-                "database_uri": db_uri,
-            }
-        )
-
-    except Exception as e:
-        print("Error during deployment:", str(e))
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            content={"status": "error", "message": str(e)}
-        )
-
+        except Exception as e:
+            error_str = str(e)
+            print(f"Error during deployment (attempt {retry_count + 1}/{max_retries}): {error_str}")
+            
+            if "ENOSPC" in error_str and retry_count < max_retries - 1:
+                print("No space left on device. Cleaning /tmp and retrying...")
+                cleanup_tmp()
+                retry_count += 1
+                time.sleep(2) 
+                continue
+            else:
+                return JSONResponse(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                    content={"status": "error", "message": error_str}
+                )
+        finally:
+            cleanup_tmp()
 
 if __name__ == "__main__":
     import uvicorn
+
+    cleanup_tmp()
     uvicorn.run(app, host="0.0.0.0", port=8081)
