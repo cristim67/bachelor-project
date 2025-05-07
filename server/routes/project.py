@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials
+from pydantic import BaseModel
 from repository.project import ProjectRepository
 from repository.session import SessionRepository
 from routes.utils import BearerToken
@@ -73,7 +74,11 @@ async def check_project_s3(id: str, credentials: HTTPAuthorizationCredentials = 
 
     return JSONResponse(status_code=status.HTTP_200_OK, content={"code": status.HTTP_200_OK, "s3_info": s3_info})
 
+class UpdateProjectRequest(BaseModel):
+    deployment_url: Optional[str] = None
+    database_uri: Optional[str] = None
+
 @router.put("/update/{id}/deployment-url")
-async def update_project(id: str, deployment_url: Optional[str] = None, database_uri: Optional[str] = None, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    project = await ProjectRepository.update_project_deployment_url(id, deployment_url, database_uri)
+async def update_project(id: str, request: UpdateProjectRequest, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    project = await ProjectRepository.update_project_deployment_url(id, request.deployment_url, request.database_uri)
     return {"code": 200, "project": project}
