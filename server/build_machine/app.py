@@ -157,13 +157,13 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
 
         # Update the project in the database
         async with aiohttp.ClientSession() as session:
-            params = {"deployment_url": deploy_url}
+            data = {"deployment_url": deploy_url}
             if db_uri:
-                params["database_uri"] = db_uri
+                data["database_uri"] = db_uri
 
             async with session.put(f"{os.getenv('CORE_API_URL') or 'http://localhost:8080'}/v1/project/update/{project_id}/deployment-url", 
-                                  params=params, 
-                                  headers={"Authorization": f"Bearer {credentials.credentials}"}) as response:
+                                json=data,
+                                headers={"Authorization": f"Bearer {credentials.credentials}"}) as response:
                 if response.status != 200:
                     raise Exception(f"Failed to update project in the database: {response.status}")
 
