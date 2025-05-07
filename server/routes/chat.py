@@ -268,12 +268,10 @@ async def project_generator(
                     group_content = json_match.group(1) if len(json_match.groups()) > 0 else json_match.group(0)
                     json_content = json.loads(group_content)
 
-                    name_generator = NameGenerator()
+                    database_name = project.database_name.replace("-", "_")
 
-                    six_letters_random = ''.join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=6))
-
-                    group_content = group_content.replace("MONGODB_URI", f"{name_generator.generate_color_animal_name().upper()}_{six_letters_random}_URI")
-                    group_content = group_content.replace("POSTGRES_URI", f"{name_generator.generate_color_animal_name().upper()}_{six_letters_random}_URI")
+                    group_content = group_content.replace("MONGODB_URI", f"{database_name.upper()}_DATABASE_URL")
+                    group_content = group_content.replace("POSTGRES_URI", f"{database_name.upper()}_DATABASE_URL")
                     json_content = json.loads(group_content)
 
                     break

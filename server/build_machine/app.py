@@ -110,8 +110,8 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
             print("\nOriginal YAML content:")
             print(yaml_content)
             
-            new_db_name = database_name.lower().replace('_', '-')
-            print(f"\nUsing database name from request: {new_db_name}-db")
+            # Use database_name directly since it's already in the correct format
+            print(f"\nUsing database name from request: {database_name}")
             
             db_name_matches = re.finditer(r'(services:\s+databases:\s+- name:\s*)[^\n]+', yaml_content)
             print("\nDatabase name matches:")
@@ -120,7 +120,7 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
             
             yaml_content = re.sub(
                 r'(services:\s+databases:\s+- name:\s*)[^\n]+',
-                r'\1' + new_db_name + '-db',
+                r'\1' + database_name,
                 yaml_content
             )
             
@@ -131,7 +131,7 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
             
             yaml_content = re.sub(
                 r'(\${{services\.databases\.)[^\.]+(\.uri}})',
-                r'\1' + new_db_name + '-db' + r'\2',
+                r'\1' + database_name + r'\2',
                 yaml_content
             )
             
