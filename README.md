@@ -4,7 +4,7 @@ A web application built with FastAPI and React, implementing an advanced AI agen
 
 ## 🏗️ Detailed Architecture
 
-![AI and Cloud Architecture](readme-images/cloud.svg)
+![AI and Cloud Architecture](_images/cloud.svg)
 
 This detailed architecture diagram shows the complete stack of our application, including:
 - Client Layer (React, Redux, Tailwind)
@@ -14,7 +14,7 @@ This detailed architecture diagram shows the complete stack of our application, 
 
 ## 📊 System Architecture (Flow)
 
-![System Architecture](readme-images/flow.svg)
+![System Architecture](_images/flow.svg)
 
 The diagram above illustrates the system's architecture and data flow, showing how different components interact to provide a seamless experience.
 
