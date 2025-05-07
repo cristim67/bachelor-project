@@ -2,12 +2,6 @@
 
 A web application built with FastAPI and React, implementing an advanced AI agent system with project management and generating code capabilities. The system features multiple specialized agents working together to provide intelligent assistance and project management.
 
-## 📊 System Architecture
-
-![System Architecture](readme-images/flow.svg)
-
-The diagram above illustrates the system's architecture and data flow, showing how different components interact to provide a seamless experience.
-
 ## 🏗️ Detailed Architecture
 
 ![AI and Cloud Architecture](readme-images/cloud.svg)
@@ -17,6 +11,13 @@ This detailed architecture diagram shows the complete stack of our application, 
 - API Gateway Layer (FastAPI, Auth, SSE)
 - AI Layer (Agent Factory, LLM Providers, Monitoring)
 - Cloud Infrastructure (AWS, MongoDB, Genezio)
+
+## 📊 System Architecture (Flow)
+
+![System Architecture](readme-images/flow.svg)
+
+The diagram above illustrates the system's architecture and data flow, showing how different components interact to provide a seamless experience.
+
 
 ## 🚀 Features
 
