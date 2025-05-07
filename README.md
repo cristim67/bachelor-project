@@ -8,6 +8,16 @@ A web application built with FastAPI and React, implementing an advanced AI agen
 
 The diagram above illustrates the system's architecture and data flow, showing how different components interact to provide a seamless experience.
 
+## 🏗️ Detailed Architecture
+
+![AI and Cloud Architecture](readme-images/cloud.svg)
+
+This detailed architecture diagram shows the complete stack of our application, including:
+- Client Layer (React, Redux, Tailwind)
+- API Gateway Layer (FastAPI, Auth, SSE)
+- AI Layer (Agent Factory, LLM Providers, Monitoring)
+- Cloud Infrastructure (AWS, MongoDB, Genezio)
+
 ## 🚀 Features
 
 ### Backend (FastAPI)
