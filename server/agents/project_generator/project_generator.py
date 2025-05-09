@@ -99,6 +99,8 @@ Rules:
      * All endpoints, schemas, and security definitions
      * Interactive UI for testing endpoints
      * Real-time documentation updates
+     * DO NOT include the servers attribute in the swagger.yaml file - let Swagger UI use the current server URL automatically
+     
    - MUST include .gitignore with:
      * node_modules/
      * .env
