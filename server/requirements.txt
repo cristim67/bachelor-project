@@ -23,4 +23,4 @@ pre-commit
 loguru
 email-validator
 langfuse
-google-generativeai
+google-genai
