@@ -4,8 +4,8 @@ backend:
           handler: app
           name: fastapi
           path: .
-          type: httpServer
           timeout: 900
+          type: httpServer
     language:
         name: python
         packageManager: pip
