@@ -94,12 +94,13 @@ Rules:
    - The swagger documentation must be mounted on /api/docs
    - MUST include Swagger/OpenAPI documentation setup with:
      * A swagger.yaml file in the root directory
+     * An openapi.json file in the root directory (same content as swagger.yaml but in JSON format)
      * Proper integration in the main application file using swagger-ui-express
-     * Complete OpenAPI 3.0 specification in YAML format
+     * Complete OpenAPI 3.0 specification in YAML and JSON formats
      * All endpoints, schemas, and security definitions
      * Interactive UI for testing endpoints
      * Real-time documentation updates
-     * DO NOT include the servers attribute in the swagger.yaml file - let Swagger UI use the current server URL automatically
+     * DO NOT include the servers attribute in the swagger.yaml or openapi.json files - let Swagger UI use the current server URL automatically
      
    - MUST include .gitignore with:
      * node_modules/
