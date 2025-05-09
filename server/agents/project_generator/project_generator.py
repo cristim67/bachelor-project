@@ -26,7 +26,7 @@ DEFAULT CHOICES (use these if not specified):
    - Default: MongoDB
    - Alternative: PostgreSQL (only if explicitly requested)
    - Connection strings:
-     * MongoDB: process.env.MONGODB_URI
+     * MongoDB: process.env.MONGODB_URI (connect directly without additional options)
      * PostgreSQL: process.env.POSTGRES_URI
 
 2. API Architecture:
@@ -80,6 +80,10 @@ Rules:
      * Use named exports for all functions and classes
      * Example: export function myFunction() { ... }
      * Import using: import { myFunction } from './utils/myFunction.mjs'
+   - For MongoDB connection:
+     * Connect directly using the connection URI without additional options
+     * Example: await mongoose.connect(process.env.MONGODB_URI).then(() => {console.log("Connected to MongoDB")}).catch(err => {console.error('MongoDB connection error:', err);})
+     * DO NOT use deprecated options like useNewUrlParser or useUnifiedTopology
 
 3. Project structure:
    - Separate routes, models, services, and middleware
@@ -89,9 +93,10 @@ Rules:
    - All JavaScript files must end in .mjs
    - The swagger documentation must be mounted on /api/docs
    - MUST include Swagger/OpenAPI documentation setup with:
-     * Proper integration in the main application file
-     * JSDoc comments for all routes and schemas
-     * Automatic generation of API documentation
+     * A swagger.yaml file in the root directory
+     * Proper integration in the main application file using swagger-ui-express
+     * Complete OpenAPI 3.0 specification in YAML format
+     * All endpoints, schemas, and security definitions
      * Interactive UI for testing endpoints
      * Real-time documentation updates
    - MUST include .gitignore with:
@@ -127,7 +132,8 @@ IMPORTANT:
 - ALWAYS use named exports for configuration files and utilities
 - NEVER use default exports
 - NEVER create .env file (only .env.example)
-- NEVER use jsdoc-swagger dependency
+- NEVER use jsdoc-swagger dependency, always use a swagger.yaml file
+- For MongoDB, connect directly using the URI without additional options
 
 IMPORTANT ENVIRONMENT VARIABLES (MUST USE THESE EXACT NAMES):
 1. Database connection strings:

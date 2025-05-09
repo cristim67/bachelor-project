@@ -74,8 +74,6 @@ Your response MUST include:
      * Validation: express-validator
      * Logging: winston
      * Testing: jest, supertest
-     * Caching: redis
-     * Rate limiting: express-rate-limit
      * Any other specific requirements
 
 6. Security Requirements:

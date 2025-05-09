@@ -46,6 +46,7 @@ export const Project = () => {
     deployment_url: string;
     database_uri: string;
   } | null>(null);
+  const [finalDeploymentUrl, setFinalDeploymentUrl] = useState<string>("");
   const requirementsRef = useRef<HTMLPreElement>(null);
   const [vm, setVm] = useState<VM | null>(null);
 
@@ -254,8 +255,11 @@ export const Project = () => {
         projectResponse.project &&
         projectResponse.project.deployment_url
       ) {
+        const baseUrl = projectResponse.project.deployment_url;
+        const finalUrl = await checkApiDocs(baseUrl);
+        setFinalDeploymentUrl(finalUrl);
         setDeploymentUrls({
-          deployment_url: projectResponse.project.deployment_url,
+          deployment_url: baseUrl,
           database_uri: projectResponse.project.database_uri || "",
         });
       }
@@ -677,6 +681,18 @@ export const Project = () => {
     }
   };
 
+  const checkApiDocs = async (baseUrl: string) => {
+    try {
+      const response = await axios.get(`${baseUrl}/api/docs`);
+      if (response.status === 200) {
+        return `${baseUrl}/api/docs`;
+      }
+    } catch (error) {
+      console.error("Error checking /api/docs:", error);
+    }
+    return baseUrl;
+  };
+
   const handleDeploy = async () => {
     setIsDeploying(true);
     try {
@@ -690,11 +706,27 @@ export const Project = () => {
           response.project.database_name,
         );
         if (deployResponse.status === "success") {
+          const baseUrl = deployResponse.deployment_url;
+          console.log("Base URL:", baseUrl);
+
+          // Set the base URL immediately
+          setFinalDeploymentUrl(baseUrl);
           setDeploymentUrls({
-            deployment_url: deployResponse.deployment_url,
+            deployment_url: baseUrl,
             database_uri: deployResponse.database_uri,
           });
+
+          // Show modal first
           setShowUrlsModal(true);
+
+          // Then check for /api/docs
+          try {
+            const finalUrl = await checkApiDocs(baseUrl);
+            console.log("Final URL:", finalUrl);
+            setFinalDeploymentUrl(finalUrl);
+          } catch (error) {
+            console.error("Error checking /api/docs:", error);
+          }
         }
       }
     } catch (error) {
@@ -1026,7 +1058,7 @@ export const Project = () => {
         )}
 
         {/* URLs Modal */}
-        {showUrlsModal && deploymentUrls && (
+        {showUrlsModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div
               className={`w-full max-w-lg rounded-xl shadow-2xl ${
@@ -1084,18 +1116,22 @@ export const Project = () => {
                         }`}
                       >
                         <a
-                          href={deploymentUrls.deployment_url}
+                          href={
+                            finalDeploymentUrl || deploymentUrls?.deployment_url
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="hover:underline text-xs block truncate"
                         >
-                          {deploymentUrls.deployment_url}
+                          {finalDeploymentUrl || deploymentUrls?.deployment_url}
                         </a>
                       </div>
                       <button
                         onClick={() =>
                           navigator.clipboard.writeText(
-                            deploymentUrls.deployment_url,
+                            finalDeploymentUrl ||
+                              deploymentUrls?.deployment_url ||
+                              "",
                           )
                         }
                         className={`p-2 rounded-lg hover:bg-opacity-10 ${
@@ -1138,18 +1174,18 @@ export const Project = () => {
                         }`}
                       >
                         <a
-                          href={deploymentUrls.database_uri}
+                          href={deploymentUrls?.database_uri}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={`hover:underline text-xs block truncate`}
                         >
-                          {deploymentUrls.database_uri}
+                          {deploymentUrls?.database_uri}
                         </a>
                       </div>
                       <button
                         onClick={() =>
                           navigator.clipboard.writeText(
-                            deploymentUrls.database_uri,
+                            deploymentUrls?.database_uri || "",
                           )
                         }
                         className={`p-2 rounded-lg hover:bg-opacity-10 ${
@@ -1189,7 +1225,7 @@ export const Project = () => {
                   </button>
                   <button
                     onClick={() =>
-                      window.open(deploymentUrls.deployment_url, "_blank")
+                      window.open(deploymentUrls?.deployment_url, "_blank")
                     }
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       theme === "light"
