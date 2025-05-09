@@ -2,6 +2,7 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional, Tuple
 
+import google.generativeai as genai
 from agents.utils import LLMClient, LLMProvider, ModelConfig
 from config.env_handler import LANGFUSE_HOST, LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY
 from config.logger import logger
@@ -53,6 +54,9 @@ class Agent(ABC):
     ):
         if model is None:
             model = ModelConfig.DEFAULT_MODELS[LLMProvider.OPENAI]
+
+        provider = ModelConfig.get_model_provider(model)
+        logger.info(f"Using model: {model} from provider: {provider.value}")
 
         langfuse_context.update_current_trace(
             name=f"Agent - {self.name}",
@@ -106,6 +110,22 @@ class Agent(ABC):
                     async for event in message:
                         if event.type == "content_block_delta":
                             yield event.delta.text
+                elif provider == LLMProvider.GEMINI:
+                    gemini_model = genai.GenerativeModel(model)
+                    chat = gemini_model.start_chat(history=[])
+                    if system_prompt:
+                        chat.send_message(system_prompt)
+                    
+                    response = await chat.send_message_async(
+                        prompt,
+                        stream=True,
+                        generation_config=genai.types.GenerationConfig(
+                            **({"max_output_tokens": max_tokens} if max_tokens is not None else {}),
+                        )
+                    )
+                    async for chunk in response:
+                        if chunk.text:
+                            yield chunk.text
                 else:
                     raise ValueError(f"Unknown model provider: {provider}")
 
@@ -151,6 +171,19 @@ class Agent(ABC):
                     max_tokens=2048,
                 )
                 return response.content[0].text
+            elif provider == LLMProvider.GEMINI:
+                gemini_model = genai.GenerativeModel(model)
+                chat = gemini_model.start_chat(history=[])
+                if system_prompt:
+                    chat.send_message(system_prompt)
+                
+                response = chat.send_message(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        **({"max_output_tokens": max_tokens} if max_tokens is not None else {}),
+                    )
+                )
+                return response.text
             else:
                 raise ValueError(f"Unknown model provider: {provider}")
 
