@@ -127,6 +127,7 @@ IMPORTANT:
 - ALWAYS use named exports for configuration files and utilities
 - NEVER use default exports
 - NEVER create .env file (only .env.example)
+- NEVER use jsdoc-swagger dependency
 
 IMPORTANT ENVIRONMENT VARIABLES (MUST USE THESE EXACT NAMES):
 1. Database connection strings:
