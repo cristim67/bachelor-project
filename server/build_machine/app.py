@@ -116,22 +116,56 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
             if tree_result.stderr:
                 print("Tree errors:", tree_result.stderr)
         
-            print("Running genezio analyze...")
-            analyze_result = subprocess.run(["genezio", "analyze", "--name", project_name, "--region", region], 
-                                         capture_output=True, 
-                                         text=True,
-                                         cwd= os.path.join(temp_dir, "code"),
-                                         env={"CI": "true",
-                                              "GENEZIO_TOKEN": token,
-                                              "GENEZIO_NO_TELEMETRY": "1",
-                                              "HOME":"/tmp",
-                                              **os.environ})
-            print("Analyze output:", analyze_result.stdout)
+            code_dir = os.path.join(temp_dir, "code")
+            print(f"Checking code directory at: {code_dir}")
+            if not os.path.exists(code_dir):
+                raise Exception(f"Code directory not found at {code_dir}")
+            
+            print(f"Code directory contents:")
+            for item in os.listdir(code_dir):
+                print(f"- {item}")
 
-            if analyze_result.stderr:
-                print("Analyze errors:", analyze_result.stderr)
+            print(f"Running genezio analyze in directory: {code_dir}")
+            print(f"Project name: {project_name}")
+            print(f"Region: {region}")
+            
+            if not project_name or not isinstance(project_name, str):
+                raise Exception(f"Invalid project name: {project_name}")
+            if not region or not isinstance(region, str):
+                raise Exception(f"Invalid region: {region}")
+            
+            try:
+                print("Running genezio analyze command with:")
+                print(f"Command: genezio analyze --name {project_name} --region {region}")
+                print(f"Working directory: {code_dir}")
+                print(f"Environment variables: CI=true, GENEZIO_TOKEN=***, GENEZIO_NO_TELEMETRY=1, HOME=/tmp")
+                
+                analyze_result = subprocess.run(["genezio", "analyze", "--name", project_name, "--region", region], 
+                                             capture_output=True, 
+                                             text=True,
+                                             cwd=code_dir,
+                                             env={"CI": "true",
+                                                  "GENEZIO_TOKEN": token,
+                                                  "GENEZIO_NO_TELEMETRY": "1",
+                                                  "HOME":"/tmp",
+                                                  **os.environ})
+                print("Analyze output:", analyze_result.stdout)
 
-            with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
+                if analyze_result.stderr:
+                    print("Analyze errors:", analyze_result.stderr)
+                    if "error" in analyze_result.stderr.lower():
+                        raise Exception(f"Genezio analyze failed: {analyze_result.stderr}")
+            except Exception as e:
+                print(f"Error during genezio analyze: {str(e)}")
+                raise
+
+            yaml_path = os.path.join(code_dir, "genezio.yaml")
+            print(f"Checking for genezio.yaml at: {yaml_path}")
+            if not os.path.exists(yaml_path):
+                raise Exception(f"genezio.yaml not found at {yaml_path}")
+
+            print(f"Reading genezio.yaml from: {yaml_path}")
+            with open(yaml_path, "r") as f:
                 yaml_content = f.read()
                 print("\nOriginal YAML content:")
                 print(yaml_content)
@@ -163,11 +197,11 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
                 print("\nModified YAML content:")
                 print(yaml_content)
 
-                with open(os.path.join(temp_dir, "code", "genezio.yaml"), "w") as f:
+                with open(yaml_path, "w") as f:
                     f.write(yaml_content)
 
             print("Cat genezio.yaml file:")
-            with open(os.path.join(temp_dir, "code", "genezio.yaml"), "r") as f:
+            with open(yaml_path, "r") as f:
                 print(f.read())
 
             print("Running genezio deploy...")
@@ -175,7 +209,7 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
                 deploy_result = subprocess.run(["genezio", "deploy", "--logLevel", "debug"], 
                                              capture_output=True, 
                                              text=True,
-                                             cwd= os.path.join(temp_dir, "code"),
+                                             cwd= code_dir,
                                              env={"CI": "true",
                                                   "GENEZIO_TOKEN": token,
                                                   "GENEZIO_NO_TELEMETRY": "1",
@@ -229,23 +263,33 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
             deploy_url_match_dev = re.search(r'https://[a-zA-Z0-9-]+\.dev-fkt\.cloud\.genez\.io', deploy_result.stdout)
             deploy_url = deploy_url_match.group(0) if deploy_url_match else deploy_url_match_dev.group(0) if deploy_url_match_dev else None
 
+            # Extract genezio project ID from the deploy output
+            genezio_project_id_match = re.search(r'https://app\.genez\.io/project/([a-f0-9-]+)/', deploy_result.stdout)
+            genezio_project_id = genezio_project_id_match.group(1) if genezio_project_id_match else None
+
             db_uri = None
-            with open(env_file_path, 'r') as f:
-                content = f.read()
-                db_uri_match = re.search(r'(mongodb\+srv://[^\s]+|postgresql://[^\s]+)', content)
-                if db_uri_match:
-                    db_uri = db_uri_match.group(1)
+            if os.path.exists(env_file_path):
+                try:
+                    with open(env_file_path, 'r') as f:
+                        content = f.read()
+                        db_uri_match = re.search(r'(mongodb\+srv://[^\s]+|postgresql://[^\s]+)', content)
+                        if db_uri_match:
+                            db_uri = db_uri_match.group(1)
+                except Exception as e:
+                    print(f"Error reading environment file: {str(e)}")
 
             if not deploy_url:
                 raise Exception("Failed to extract deployment URL from output")
 
             print("Deploy URL:", deploy_url)
             print("DB URI:", db_uri)
-
+            print("Genezio Project ID:", genezio_project_id)
             async with aiohttp.ClientSession() as session:
                 data = {"deployment_url": deploy_url}
                 if db_uri:
                     data["database_uri"] = db_uri
+                if genezio_project_id:
+                    data["genezio_project_id"] = genezio_project_id
 
                 async with session.put(f"{os.getenv('CORE_API_URL') or 'http://0.0.0.0:8080'}/v1/project/update/{project_id}/deployment-url", 
                                     json=data,
