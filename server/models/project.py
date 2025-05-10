@@ -12,6 +12,7 @@ class Project(Document):
     s3_presigned_url: Optional[str] = None
     db_uri: Optional[str] = None
     database_name: Optional[str] = None
+    genezio_project_id: Optional[str] = None
     region: Optional[str] = None
     name: Optional[str] = None
     deployment_url: Optional[str] = None

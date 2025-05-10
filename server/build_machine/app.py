@@ -52,13 +52,51 @@ async def health():
 @app.get("/genezio-login")
 async def genezio_login():
     print("Running genezio login...")
-    result = subprocess.run(["genezio", "login", token], capture_output=True, text=True, env={"CI": "true", **os.environ})
+    print(f"Using token: {token[:10]}...")  # Only print first 10 chars for security
+    
+    result = subprocess.run(
+        ["genezio", "login", token], 
+        capture_output=True, 
+        text=True, 
+        env={"CI": "true", **os.environ}
+    )
+    print("Login stdout:", result.stdout)
     if result.stderr:
-        print("Login errors:", result.stderr)
-    result = subprocess.run(["genezio", "account"], capture_output=True, text=True, env={"CI": "true", **os.environ})
-    if result.stderr:
-        print("Account errors:", result.stderr)
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "ok", "result": result.stdout})
+        print("Login stderr:", result.stderr)
+    if result.returncode != 0:
+        print(f"Login failed with return code: {result.returncode}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"status": "error", "message": f"Login failed: {result.stderr}"}
+        )
+
+    print("Running genezio account...")
+    account_result = subprocess.run(
+        ["genezio", "account"], 
+        capture_output=True, 
+        text=True, 
+        env={"CI": "true", **os.environ}
+    )
+    print("Account stdout:", account_result.stdout)
+    if account_result.stderr:
+        print("Account stderr:", account_result.stderr)
+    if account_result.returncode != 0:
+        print(f"Account check failed with return code: {account_result.returncode}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"status": "error", "message": f"Account check failed: {account_result.stderr}"}
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, 
+        content={
+            "status": "ok", 
+            "result": {
+                "login_output": result.stdout,
+                "account_output": account_result.stdout
+            }
+        }
+    )
 
 def cleanup_tmp():
     """Clean up /tmp directory."""
@@ -135,26 +173,52 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
                 raise Exception(f"Invalid region: {region}")
             
             try:
+                print("Running genezio login with token:", token[:10] + "...")  # Only print first 10 chars
+                login_result = subprocess.run(
+                    ["genezio", "login", token], 
+                    capture_output=True, 
+                    text=True, 
+                    env={"CI": "true", **os.environ}
+                )
+                print("Login stdout:", login_result.stdout)
+                if login_result.stderr:
+                    print("Login stderr:", login_result.stderr)
+                if login_result.returncode != 0:
+                    raise Exception(f"Login failed with return code {login_result.returncode}: {login_result.stderr}")
+
+                print("Running genezio account command:")
+                account_result = subprocess.run(
+                    ["genezio", "account"], 
+                    capture_output=True, 
+                    text=True, 
+                    env={"CI": "true", **os.environ}
+                )
+                print("Account stdout:", account_result.stdout)
+                if account_result.stderr:
+                    print("Account stderr:", account_result.stderr)
+                if account_result.returncode != 0:
+                    raise Exception(f"Account check failed with return code {account_result.returncode}: {account_result.stderr}")
+
                 print("Running genezio analyze command with:")
                 print(f"Command: genezio analyze --name {project_name} --region {region}")
                 print(f"Working directory: {code_dir}")
                 print(f"Environment variables: CI=true, GENEZIO_TOKEN=***, GENEZIO_NO_TELEMETRY=1, HOME=/tmp")
                 
-                analyze_result = subprocess.run(["genezio", "analyze", "--name", project_name, "--region", region], 
-                                             capture_output=True, 
-                                             text=True,
-                                             cwd=code_dir,
-                                             env={"CI": "true",
-                                                  "GENEZIO_TOKEN": token,
-                                                  "GENEZIO_NO_TELEMETRY": "1",
-                                                  "HOME":"/tmp",
-                                                  **os.environ})
-                print("Analyze output:", analyze_result.stdout)
-
+                analyze_result = subprocess.run(
+                    ["genezio", "analyze", "--name", project_name, "--region", region], 
+                    capture_output=True, 
+                    text=True,
+                    cwd=code_dir,
+                    env={"CI": "true",
+                         "GENEZIO_TOKEN": token,
+                         "GENEZIO_NO_TELEMETRY": "1",
+                         "HOME":"/tmp"}
+                )
+                print("Analyze stdout:", analyze_result.stdout)
                 if analyze_result.stderr:
-                    print("Analyze errors:", analyze_result.stderr)
-                    if "error" in analyze_result.stderr.lower():
-                        raise Exception(f"Genezio analyze failed: {analyze_result.stderr}")
+                    print("Analyze stderr:", analyze_result.stderr)
+                if analyze_result.returncode != 0:
+                    raise Exception(f"Analyze failed with return code {analyze_result.returncode}: {analyze_result.stderr}")
             except Exception as e:
                 print(f"Error during genezio analyze: {str(e)}")
                 raise
@@ -206,15 +270,14 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
 
             print("Running genezio deploy...")
             while retry_count < max_retries:
-                deploy_result = subprocess.run(["genezio", "deploy", "--logLevel", "debug"], 
+                deploy_result = subprocess.run(["genezio", "deploy"], 
                                              capture_output=True, 
                                              text=True,
                                              cwd= code_dir,
                                              env={"CI": "true",
                                                   "GENEZIO_TOKEN": token,
                                                   "GENEZIO_NO_TELEMETRY": "1",
-                                                  "HOME":"/tmp",
-                                                  **os.environ})
+                                                  "HOME":"/tmp"})
                 print("Deploy output:", deploy_result.stdout)
                 if deploy_result.stderr:
                     print("Deploy errors:", deploy_result.stderr)
@@ -245,8 +308,7 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
                                          env={"CI": "true",
                                               "GENEZIO_TOKEN": token,
                                               "GENEZIO_NO_TELEMETRY": "1",
-                                              "HOME": "/tmp",
-                                              **os.environ})
+                                              "HOME": "/tmp"})
             print("Getenv return code:", getenv_result.returncode)
             print("Getenv stdout:", getenv_result.stdout)
             if getenv_result.stderr:
