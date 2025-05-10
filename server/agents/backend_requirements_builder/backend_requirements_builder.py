@@ -88,6 +88,8 @@ DO NOT generate any code, setup instructions, or implementation details. Your ON
 DO NOT ask any questions. Instead, analyze the requirements and provide appropriate structure.
 """
 
+system_prompt= """"""
+
 wrapping_prompt: str = """<<USER_PROMPT>>"""
 
 
