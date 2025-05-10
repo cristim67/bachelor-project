@@ -688,12 +688,22 @@ export const Project = () => {
 
   const checkApiDocs = async (baseUrl: string) => {
     try {
-      const response = await axios.get(`${baseUrl}/api/docs`);
-      if (response.status === 200) {
+      // Try /api/docs first
+      const docsResponse = await axios.get(`${baseUrl}/api/docs`);
+      if (docsResponse.status === 200) {
         return `${baseUrl}/api/docs`;
       }
     } catch (error) {
       console.error("Error checking /api/docs:", error);
+      try {
+        // If /api/docs fails, try /api-docs
+        const apiDocsResponse = await axios.get(`${baseUrl}/api-docs`);
+        if (apiDocsResponse.status === 200) {
+          return `${baseUrl}/api-docs`;
+        }
+      } catch (error) {
+        console.error("Error checking /api-docs:", error);
+      }
     }
     return baseUrl;
   };
