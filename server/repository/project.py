@@ -31,6 +31,7 @@ class ProjectRepository:
         name = name_generator.generate_color_animal_name(separator='-')+''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=6))
         region = "eu-central-1"
         database_name = name_generator.generate_color_animal_name(separator='-')+''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=6))
+        genezio_project_id = None
 
         project = Project(
             idea=project_input.idea,
@@ -42,6 +43,7 @@ class ProjectRepository:
             name=name,
             database_name=database_name,
             region=region,
+            genezio_project_id=genezio_project_id,
             created_at=datetime.now(),
             updated_at=datetime.now(),
             deleted_at=None,
@@ -107,7 +109,7 @@ class ProjectRepository:
             raise HTTPException(status_code=500, detail="Internal server error")
 
     @staticmethod
-    async def update_project_deployment_url(id: str, deployment_url: Optional[str] = None, database_uri: Optional[str] = None):
+    async def update_project_deployment_url(id: str, deployment_url: Optional[str] = None, database_uri: Optional[str] = None, genezio_project_id: Optional[str] = None):
         try:
             project = await Project.find_one({"_id": ObjectId(id)})
             if not project:
@@ -115,6 +117,8 @@ class ProjectRepository:
 
             project.deployment_url = deployment_url or "not deployed"
             project.database_uri = database_uri or "not created"
+            project.genezio_project_id = genezio_project_id or None
+            
             await project.save()
             return project
         except Exception as e:
