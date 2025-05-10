@@ -1,5 +1,7 @@
 # Use Python base image
-FROM python:3.11-slim
+FROM python:3.13-slim
+
+WORKDIR /app
 
 # Install Node.js and tree
 RUN apt-get update && apt-get install -y \
@@ -11,17 +13,12 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
-WORKDIR /app
+# Install genezio CLI
+RUN npm install -g genezio@3.2.9
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Install genezio
-RUN npm install -g genezio@3.2.9
 
 # Copy the rest of the application
 COPY . .

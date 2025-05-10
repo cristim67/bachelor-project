@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app-network
+
+  core:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/bachelor-project
+      - JWT_SECRET=your_secret_key
+    volumes:
+      - ./server:/app
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+
+  build_machine:
+    build:
+      context: ./server/build_machine
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    environment:
+      - CORE_API_URL=http://core:8080
+      - GENEZIO_TOKEN=${GENEZIO_TOKEN}
+      - PORT=8081
+      - NODE_ENV=development
+      - CI=true
+      - GENEZIO_NO_TELEMETRY=1
+      - HOME=/tmp
+    volumes:
+      - ./server/build_machine:/app
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    env_file:
+      - .env
+    environment:
+      - VITE_API_URL=http://localhost:8080
+      - HOST=0.0.0.0
+    volumes:
+      - ./client/src:/app/src
+    networks:
+      - app-network
+    depends_on:
+      - core
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

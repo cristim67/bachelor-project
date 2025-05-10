@@ -12,6 +12,9 @@ from langfuse import Langfuse
 from langfuse.decorators import langfuse_context, observe
 from openai import OpenAI
 
+# Token limits
+MAX_INPUT_TOKENS = 1_048_576
+MAX_OUTPUT_TOKENS = 8_192
 
 class Agent(ABC):
     @property
@@ -52,8 +55,18 @@ class Agent(ABC):
         json_mode: bool = False,
         max_tokens: Optional[int] = None,
     ):
+        print(f"Max tokens: {max_tokens}")
         if model is None:
             model = ModelConfig.DEFAULT_MODELS[LLMProvider.OPENAI]
+
+        # Validate token limits
+        if max_tokens is not None and max_tokens > MAX_OUTPUT_TOKENS:
+            raise ValueError(f"Maximum output tokens cannot exceed {MAX_OUTPUT_TOKENS}")
+        
+        # Calculate approximate input tokens (rough estimation)
+        input_tokens = len(system_prompt.split()) + len(prompt.split())
+        if input_tokens > MAX_INPUT_TOKENS:
+            raise ValueError(f"Input tokens exceed maximum limit of {MAX_INPUT_TOKENS}")
 
         provider = ModelConfig.get_model_provider(model)
         logger.info(f"Using model: {model} from provider: {provider.value}")
@@ -104,7 +117,7 @@ class Agent(ABC):
                             {"role": "user", "content": prompt},
                         ],
                         model=model,
-                        max_tokens=2048,
+                        max_tokens=4096,
                         stream=True,
                     )
                     async for event in message:
@@ -120,7 +133,7 @@ class Agent(ABC):
                         prompt,
                         stream=True,
                         generation_config=genai.types.GenerationConfig(
-                            **({"max_output_tokens": max_tokens} if max_tokens is not None else {}),
+                            **({"max_output_tokens": max_tokens} if max_tokens is not None else {"max_output_tokens": 4096}),
                         )
                     )
                     async for chunk in response:
@@ -168,7 +181,7 @@ class Agent(ABC):
                         {"role": "user", "content": prompt},
                     ],
                     model=model,
-                    max_tokens=2048,
+                    max_tokens=4096,
                 )
                 return response.content[0].text
             elif provider == LLMProvider.GEMINI:
@@ -180,7 +193,7 @@ class Agent(ABC):
                 response = chat.send_message(
                     prompt,
                     generation_config=genai.types.GenerationConfig(
-                        **({"max_output_tokens": max_tokens} if max_tokens is not None else {}),
+                        **({"max_output_tokens": max_tokens} if max_tokens is not None else {"max_output_tokens": 4096}),
                     )
                 )
                 return response.text

@@ -291,7 +291,7 @@ async def project_build(request: ProjectData, credentials: HTTPBearer = Depends(
                 if genezio_project_id:
                     data["genezio_project_id"] = genezio_project_id
 
-                async with session.put(f"{os.getenv('CORE_API_URL') or 'http://0.0.0.0:8080'}/v1/project/update/{project_id}/deployment-url", 
+                async with session.put(f"{os.getenv('CORE_API_URL') or 'http://host.docker.internal:8080'}/v1/project/update/{project_id}/deployment-url", 
                                     json=data,
                                     headers={"Authorization": f"Bearer {credentials.credentials}"}) as response:
                     if response.status != 200:
