@@ -23,8 +23,8 @@ The JSON structure should be in the following format:
 
 DEFAULT CHOICES (use these if not specified):
 1. Database:
-   - Default: MongoDB
-   - Alternative: PostgreSQL (only if explicitly requested)
+   - MongoDB is the DEFAULT choice if no database is specified
+   - Only use PostgreSQL if explicitly requested
    - Connection strings:
      * MongoDB: process.env.MONGODB_URI (connect directly without additional options)
      * PostgreSQL: process.env.POSTGRES_URI
@@ -82,8 +82,15 @@ Rules:
      * Import using: import { myFunction } from './utils/myFunction.mjs'
    - For MongoDB connection:
      * Connect directly using the connection URI without additional options
-     * Example: await mongoose.connect(process.env.MONGODB_URI).then(() => {console.log("Connected to MongoDB")}).catch(err => {console.error('MongoDB connection error:', err);})
+     * Example: 
+       ```javascript
+       mongoose.connect(process.env.MONGODB_URI)
+         .then(() => console.log("Connected to MongoDB"))
+         .catch(err => console.error('MongoDB connection error:', err));
+       ```
      * DO NOT use deprecated options like useNewUrlParser or useUnifiedTopology
+     * DO NOT block server startup waiting for database connection
+     * Server must start and be accessible even if database connection fails
 
 3. Project structure:
    - Separate routes, models, services, and middleware
@@ -92,16 +99,23 @@ Rules:
    - Include proper HTTP status codes
    - All JavaScript files must end in .mjs
    - The swagger documentation must be mounted on /api/docs
+   - The OpenAPI JSON specification must be served at /api/openapi.js
    - MUST include Swagger/OpenAPI documentation setup with:
      * A swagger.yaml file in the root directory
-     * An openapi.json file in the root directory (same content as swagger.yaml but in JSON format)
      * Proper integration in the main application file using swagger-ui-express
-     * Complete OpenAPI 3.0 specification in YAML and JSON formats
+     * Complete OpenAPI 3.0 specification in YAML format
      * All endpoints, schemas, and security definitions
      * Interactive UI for testing endpoints
      * Real-time documentation updates
-     * DO NOT include the servers attribute in the swagger.yaml or openapi.json files - let Swagger UI use the current server URL automatically
-     
+     * DO NOT include the servers attribute in the swagger.yaml file - let Swagger UI use the current server URL automatically
+     * Serve the OpenAPI spec at /api/openapi.js by loading and converting the YAML file:
+       ```javascript
+       const swaggerDocument = YAML.load('./swagger.yaml');
+       app.use('/api/openapi.js', (req, res) => {
+         res.setHeader('Content-Type', 'application/json');
+         res.send(swaggerDocument);
+       });
+       ```
    - MUST include .gitignore with:
      * node_modules/
      * .env

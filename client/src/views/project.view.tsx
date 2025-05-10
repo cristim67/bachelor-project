@@ -16,6 +16,7 @@ import axios from "axios";
 import { useFetchOnce } from "../hooks/useFetchOnce";
 import { VM } from "@stackblitz/sdk";
 import { format } from "prettier/standalone";
+import { toast } from "react-toastify";
 
 interface FileStructure {
   type: "file" | "directory";
@@ -1212,29 +1213,76 @@ export const Project = () => {
                   </div>
                 </div>
 
-                <div className="mt-8 flex justify-end gap-3">
+                <div className="mt-8 flex justify-between gap-3">
                   <button
-                    onClick={() => setShowUrlsModal(false)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    onClick={() => {
+                      const schemaUrl = `${deploymentUrls?.deployment_url}/api/openapi.json`;
+                      navigator.clipboard.writeText(schemaUrl).then(() => {
+                        toast.info(
+                          "Schema URL copied to clipboard! Press Ctrl+V in Postman to import.",
+                          {
+                            position: "top-right",
+                            autoClose: 3000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            pauseOnHover: true,
+                            draggable: true,
+                          },
+                        );
+
+                        setTimeout(() => {
+                          window.open(
+                            "https://web.postman.co/workspace/default/import",
+                            "_blank",
+                          );
+                        }, 3000);
+                      });
+                    }}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
                       theme === "light"
                         ? "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
                         : "bg-[#383a40] text-gray-200 border border-[#1e1f22] hover:bg-[#404249]"
                     }`}
                   >
-                    Close
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                      />
+                    </svg>
+                    <span>Postman</span>
                   </button>
-                  <button
-                    onClick={() =>
-                      window.open(deploymentUrls?.deployment_url, "_blank")
-                    }
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      theme === "light"
-                        ? "bg-gray-900 text-white hover:bg-gray-800"
-                        : "bg-white text-gray-900 hover:bg-gray-100"
-                    }`}
-                  >
-                    Open App
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowUrlsModal(false)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        theme === "light"
+                          ? "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
+                          : "bg-[#383a40] text-gray-200 border border-[#1e1f22] hover:bg-[#404249]"
+                      }`}
+                    >
+                      Close
+                    </button>
+                    <button
+                      onClick={() =>
+                        window.open(deploymentUrls?.deployment_url, "_blank")
+                      }
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        theme === "light"
+                          ? "bg-gray-900 text-white hover:bg-gray-800"
+                          : "bg-white text-gray-900 hover:bg-gray-100"
+                      }`}
+                    >
+                      Open App
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

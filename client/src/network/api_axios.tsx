@@ -160,6 +160,7 @@ export async function generateProject(message: string, id: string) {
       agent: "project_generator",
       // model: "gpt-4o-mini",
       model: "gemini-2.0-flash",
+      // model: "gemini-2.5-flash-preview-04-17",
       options: {
         streaming: false,
       },
@@ -202,6 +203,7 @@ export async function generateBackendRequirements(
       agent: "backend_requirements",
       // model: "gpt-4o-mini",
       model: "gemini-2.0-flash",
+      // model: "gemini-2.5-flash-preview-04-17",
       options: {
         streaming: true,
       },
@@ -294,6 +296,7 @@ export async function enhancePrompt(prompt: string) {
     agent: "enchant_user_prompt",
     // model: "gpt-4o-mini",
     model: "gemini-2.0-flash",
+    // model: "gemini-2.5-flash-preview-04-17",
     options: {
       streaming: false,
     },

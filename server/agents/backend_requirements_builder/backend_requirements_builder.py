@@ -20,7 +20,9 @@ Your response MUST include:
 
 2. Technical Stack (MUST BE):
    - Express.js with ESM (all files must use .mjs extension)
-   - Database choice (MongoDB/PostgreSQL)
+   - Database choice:
+     * MongoDB is the DEFAULT choice if no database is specified
+     * Only use PostgreSQL if explicitly requested
    - API Type (REST/GraphQL)
    - Additional technical requirements
 
