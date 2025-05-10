@@ -13,8 +13,8 @@ from langfuse.decorators import langfuse_context, observe
 from openai import OpenAI
 
 # Token limits
-MAX_INPUT_TOKENS = 1_048_576
-MAX_OUTPUT_TOKENS = 8_192
+MAX_INPUT_TOKENS = 4_096_000
+MAX_OUTPUT_TOKENS = 32_768
 
 class Agent(ABC):
     @property
@@ -55,7 +55,6 @@ class Agent(ABC):
         json_mode: bool = False,
         max_tokens: Optional[int] = None,
     ):
-        print(f"Max tokens: {max_tokens}")
         if model is None:
             model = ModelConfig.DEFAULT_MODELS[LLMProvider.OPENAI]
 
@@ -133,7 +132,7 @@ class Agent(ABC):
                         prompt,
                         stream=True,
                         generation_config=genai.types.GenerationConfig(
-                            **({"max_output_tokens": max_tokens} if max_tokens is not None else {"max_output_tokens": 4096}),
+                            **({"max_output_tokens": max_tokens} if max_tokens is not None else {}),
                         )
                     )
                     async for chunk in response:
@@ -193,7 +192,7 @@ class Agent(ABC):
                 response = chat.send_message(
                     prompt,
                     generation_config=genai.types.GenerationConfig(
-                        **({"max_output_tokens": max_tokens} if max_tokens is not None else {"max_output_tokens": 4096}),
+                        **({"max_output_tokens": max_tokens} if max_tokens is not None else {}),
                     )
                 )
                 return response.text

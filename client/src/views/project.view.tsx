@@ -87,6 +87,10 @@ export const Project = () => {
             })
             .catch((error) => {
               console.error("Stream error:", error);
+              toast.error(
+                error.message ||
+                  "An error occurred while generating requirements",
+              );
               reject(error);
             });
         });

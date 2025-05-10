@@ -214,7 +214,10 @@ export async function generateBackendRequirements(
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const errorData = await response.json();
+    throw new Error(
+      errorData.detail || `HTTP error! status: ${response.status}`,
+    );
   }
 
   const userStr = localStorage.getItem("user");

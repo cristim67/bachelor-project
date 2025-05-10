@@ -187,6 +187,8 @@ async def backend_requirements(
     except Exception as e:
         logger.error(f"Error in backend requirements: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error generating requirements: {str(e)}"
         )
@@ -411,6 +413,8 @@ async def project_generator(
     except Exception as e:
         logger.error(f"Error in project generator: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error generating project: {str(e)}"
         )
@@ -444,7 +448,7 @@ async def enhance_prompt(
         token_usage = user.token_usage + 50
 
         if token_usage >= max_tokens:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You have reached the maximum number of tokens")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You have reached the maximum number of tokens, please upgrade your subscription")
         
         user.token_usage = token_usage
         await user.save()
@@ -469,6 +473,8 @@ async def enhance_prompt(
     except Exception as e:
         logger.error(f"Error in enhance prompt: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error enhancing prompt: {str(e)}"
         )

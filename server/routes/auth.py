@@ -1,6 +1,6 @@
 from config.env_handler import FRONTEND_URL
 from dtos.user import ForgotPassword, GoogleLogin, UserInput, UserLogin, UserUpdate
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials
@@ -116,16 +116,16 @@ async def get_user(credentials: HTTPAuthorizationCredentials = Depends(security)
     try:
         user_id = await SessionRepository.get_user_by_session_token(credentials.credentials)
         if not user_id:
-            return JSONResponse(
+            raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"code": status.HTTP_401_UNAUTHORIZED, "message": "Not authenticated"}
+                detail="Not authenticated"
             )
             
         user = await AuthRepository.get_user(user_id)
         if not user:
-            return JSONResponse(
+            raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={"code": status.HTTP_404_NOT_FOUND, "message": "User not found"}
+                detail="User not found"
             )
 
         user_dict = {
@@ -141,7 +141,9 @@ async def get_user(credentials: HTTPAuthorizationCredentials = Depends(security)
             content={"code": status.HTTP_200_OK, "user": user_dict}
         )
     except Exception as e:
-        return JSONResponse(
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"code": status.HTTP_500_INTERNAL_SERVER_ERROR, "message": str(e)}
+            detail=str(e)
         )
