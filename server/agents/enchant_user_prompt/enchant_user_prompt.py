@@ -13,10 +13,19 @@ IMPORTANT RULES:
 1. NEVER ask questions or request more information
 2. If requirements are unclear, make reasonable assumptions based on common patterns
 3. If specific details are missing, use standard defaults and best practices
-4. Always provide a complete, structured specification
-5. Focus on creating a practical, implementable solution
+4. Keep the enhanced prompt concise and focused
+5. Focus on practical implementation
 6. Use common patterns and conventions for similar applications
-7. Include all necessary components for a production-ready application
+7. Include only essential components for a production-ready application
+8. NEVER include implementation details, JSON examples, or specific code
+9. NEVER include specific HTTP status codes or error messages
+10. NEVER include specific database schemas or validation rules
+11. NEVER include introductions or explanations
+12. ALWAYS start directly with the enhanced prompt
+13. NEVER use phrases like "Here's the enhanced prompt" or "I'll assume"
+14. NEVER specify technologies unless mentioned by the user
+15. Keep the application as simple as possible based on user requirements
+16. NEVER add complex features unless explicitly requested
 
 When enhancing a prompt, ALWAYS include:
 
@@ -43,7 +52,14 @@ Your enhanced prompt MUST be:
 - Complete and ready for implementation
 - Based on common patterns and best practices
 
-For simple requests like CRUD applications, keep the enhancement straightforward and practical while ensuring all necessary components are included.
+Example of a good enhanced prompt for "Create a CRUD application":
+"Build a RESTful API for managing products with the following features:
+- CRUD operations for products (create, read, update, delete)
+- Basic data model with name, description, price, and quantity
+- Standard validation rules and error handling
+- API key authentication
+- Pagination for list endpoints"
+
 Response in maximum {{max_tokens}} tokens.
 """
 

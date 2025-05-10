@@ -60,6 +60,39 @@ The JSON structure should be in the following format:
 ## API Architecture
 - Default: REST
 - Alternative: GraphQL (only if explicitly requested)
+  * MUST use the following packages with exact versions:
+    - graphql@16.8.1
+    - graphql-http@2.0.0
+    - @graphql-tools/schema@10.0.2
+    - @graphql-tools/utils@10.0.2
+    - ruru@2.0.0-beta.22
+  * MUST mount GraphQL endpoint at /graphql
+  * MUST serve GraphiQL IDE at root path (/)
+  * MUST use ESM syntax for GraphQL schema and resolvers
+  * Example structure:
+    ```javascript
+    import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
+    import { createHandler } from 'graphql-http/lib/use/express';
+    import { ruruHTML } from 'ruru/server';
+
+    const schema = new GraphQLSchema({
+      query: new GraphQLObjectType({
+        name: 'Query',
+        fields: {
+          // Define your queries here
+        },
+      }),
+    });
+
+    // Mount GraphQL endpoint
+    app.all('/graphql', createHandler({ schema }));
+
+    // Serve GraphiQL IDE
+    app.get('/', (_req, res) => {
+      res.type('html');
+      res.end(ruruHTML({ endpoint: '/graphql' }));
+    });
+    ```
 - Documentation: Swagger/OpenAPI (always included)
 - CORS: Enabled with default configuration
 

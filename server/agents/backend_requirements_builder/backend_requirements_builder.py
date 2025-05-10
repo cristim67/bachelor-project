@@ -29,7 +29,17 @@ Your response MUST be formatted as follows:
 - Database choice:
   * MongoDB is the DEFAULT choice if no database is specified
   * Only use PostgreSQL if explicitly requested
-- API Type (REST/GraphQL)
+- API Type (REST/GraphQL):
+  * If GraphQL is requested:
+    - MUST use the following packages with exact versions:
+      * graphql@16.11.0
+      * graphql-http@1.22.4
+      * @graphql-tools/schema@10.0.23
+      * @graphql-tools/utils@10.8.6
+      * ruru@2.0.0-beta.22
+    - MUST mount GraphQL endpoint at /graphql
+    - MUST serve GraphiQL IDE at root path (/)
+    - MUST use ESM syntax for GraphQL schema and resolvers
 - Additional technical requirements
 - Docker containerization (ALWAYS REQUIRED)
 - API Documentation: Swagger/OpenAPI (ALWAYS REQUIRED)
@@ -42,6 +52,11 @@ Your response MUST be formatted as follows:
 - MUST include Dockerfile in the root directory
 - MUST include README.md in the root directory
 - MUST include swagger.yaml in the root directory
+- If GraphQL is used:
+  * MUST include schema directory with:
+    - types.mjs (GraphQL type definitions)
+    - resolvers.mjs (GraphQL resolvers)
+    - schema.mjs (main schema file)
 
 # Required Features
 ## Endpoints
@@ -56,6 +71,10 @@ Your response MUST be formatted as follows:
     - Response format
     - Error cases
   * ALL endpoints MUST be documented in Swagger/OpenAPI
+  * If GraphQL is used:
+    - List all required queries and mutations
+    - Specify input types and return types
+    - Document all GraphQL types and fields
 
 ## Data Models
 - Analyze requirements to identify ALL necessary data models
@@ -81,17 +100,24 @@ Your response MUST be formatted as follows:
 - List only the packages needed for this specific project
 - Do not include version numbers
 - Core packages (always included):
-  * express
-  * mongoose (for MongoDB) or pg (for PostgreSQL)
-  * dotenv
-  * swagger-ui-express (ALWAYS REQUIRED)
-  * yaml (ALWAYS REQUIRED)
-  * cors
+  * express@5.1.0
+  * mongoose@8.14.2 (for MongoDB) or pg@8.15.6 (for PostgreSQL)
+  * dotenv@16.5.0
+  * swagger-ui-express@5.0.1 (ALWAYS REQUIRED)
+  * yaml@2.7.1 (ALWAYS REQUIRED)
+  * cors@2.8.5
+  * If GraphQL is used:
+    - graphql@16.11.0
+    - graphql-http@1.22.4
+    - @graphql-tools/schema@10.0.23
+    - @graphql-tools/utils@10.8.6
+    - ruru@2.0.0-beta.22
+  * nodemon@3.1.10
 - Additional packages (include only if needed):
-  * Authentication: jsonwebtoken, bcrypt
-  * Validation: express-validator
-  * Logging: winston
-  * Testing: jest, supertest
+  * Authentication: jsonwebtoken@9.0.2, bcrypt@5.1.1
+  * Validation: express-validator@7.2.1
+  * Logging: winston@3.17.0
+  * Testing: jest@29.7.0, supertest@7.1.0
   * Any other specific requirements
 
 # Security Requirements
@@ -110,7 +136,9 @@ Your response MUST be formatted as follows:
 - Project name and description
 - Features list
 - Prerequisites
-- Installation steps
+- Installation steps:
+  * First step MUST be "Download the zip file"
+  * Then continue with other installation steps
 - Environment variables setup
 - Running the application
 - API documentation access
