@@ -12,8 +12,3 @@ class AgentPrompt(BaseModel):
 
     system: str
     client: str
-
-
-class MockAgentPromptInput(BaseAgentPromptInput):
-    """Input for mock agent."""
-    company_name: str
