@@ -205,12 +205,20 @@ export const Home = () => {
       className={`flex flex-col items-center justify-center min-h-screen p-6 space-y-12
       ${
         theme === "dark"
-          ? "bg-neutral-900 text-neutral-100"
-          : "bg-neutral-50 text-neutral-900"
+          ? "bg-[var(--background-color)] text-[var(--text-color)]"
+          : "bg-[var(--background-color)] text-[var(--text-color)]"
       }`}
     >
-      <h1 className="max-w-4xl text-3xl font-bold text-center md:text-5xl">
-        Idea to app in seconds
+      <h1
+        className={`max-w-4xl text-4xl font-bold text-center md:text-6xl mb-8 bg-gradient-to-r ${
+          theme === "dark"
+            ? "from-neutral-300 to-neutral-100"
+            : "from-neutral-700 to-neutral-900"
+        } bg-clip-text text-transparent`}
+      >
+        AI-powered Express.js
+        <br />
+        API Generator
       </h1>
 
       <div className="w-full max-w-4xl">
