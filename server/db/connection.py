@@ -10,7 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 class DatabaseConnection:
     def __init__(self):
         self.client = AsyncIOMotorClient(BACHELOR_PROJECT_DATABASE_URL)
-        self.db = self.client["bachelor-project"]
+        self.db = self.client["bachelor-project-ocZL"]
 
     async def initialize(self):
         try:
