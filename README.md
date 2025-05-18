@@ -1,4 +1,4 @@
-# Bachelor Project - AI Agent System
+# Bachelor Project - AI Agent System 
 
 A web application built with FastAPI and React, implementing an advanced AI agent system with project management and generating code capabilities. The system features multiple specialized agents working together to provide intelligent assistance and project management.
 
