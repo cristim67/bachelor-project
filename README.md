@@ -229,3 +229,7 @@ The diagram above illustrates the system's architecture and data flow, showing h
         └── Database Setup
 ```
 
+### Author
+
+Cristi Miloiu
+
